@@ -1,0 +1,27 @@
+plugins {
+    id 'org.jetbrains.kotlin.jvm' version '1.5.10'
+    id 'org.jetbrains.kotlin.plugin.noarg' version '1.5.10'
+}
+
+noArg {
+    annotation "core.NoArg"
+}
+
+group 'be.haraka'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib"
+    implementation "org.jetbrains.kotlin:kotlin-reflect:1.3.41"
+    implementation "org.junit.jupiter:junit-jupiter:5.7.0"
+    implementation "com.esotericsoftware:kryonet:2.22.0-RC1"
+    implementation "org.jetbrains.kotlin:kotlin-noarg:1.4.10"
+}
+
+test {
+    useJUnitPlatform()
+}
