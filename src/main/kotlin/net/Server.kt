@@ -1,11 +1,20 @@
 package net
 
+import NetworkComponent
 import com.esotericsoftware.kryonet.Connection
 import com.esotericsoftware.kryonet.Listener
 import com.esotericsoftware.kryonet.Server
 import com.esotericsoftware.minlog.Log
+import components.DynamicComponent
+import components.TransformComponent
+import core.Instance
 import net.packets.*
+import systems.MovementSystem
+import java.time.Duration
+import java.time.Instant
 import java.time.LocalDateTime
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.logging.Handler
 import java.util.logging.Level
 import java.util.logging.LogRecord
@@ -15,8 +24,9 @@ import java.util.logging.Logger
 const val DEFAULT_PORT_TCP = 2049
 const val DEFAULT_PORT_UDP = 2050
 
+const val DEFAULT_TICKRATE = 15
 
-class NetworkLogger {
+object NetworkLogger {
     private val _logger = Logger.getLogger("Server")
 
     init {
@@ -31,6 +41,7 @@ class NetworkLogger {
             override fun close() {
             }
         }
+        _logger.useParentHandlers = false
         _logger.addHandler(handler)
     }
 
@@ -39,7 +50,29 @@ class NetworkLogger {
     }
 }
 
-val NETWORK_LOGGER = NetworkLogger()
+object InstanceLogger {
+    private val _logger = Logger.getLogger("Instance")
+
+    init {
+        val handler = object : Handler() {
+            override fun publish(record: LogRecord) {
+                println("${record.level} - ${LocalDateTime.now()} - ${record.message}")
+            }
+
+            override fun flush() {
+            }
+
+            override fun close() {
+            }
+        }
+        _logger.useParentHandlers = false
+        _logger.addHandler(handler)
+    }
+
+    fun log(level: Level, message: String) {
+        _logger.log(level, message)
+    }
+}
 
 enum class ClientStatus {
     DISCONNECTED, // no connection established
@@ -51,7 +84,7 @@ class ClientInstance {
 
     var status = ClientStatus.DISCONNECTED
 
-    private var username: String? = null
+    var username: String? = null
         get() { // username getter checks if the username is initialized
             assert(field != null)
             return field!!
@@ -76,14 +109,22 @@ class ClientInstance {
     }
 }
 
-class ServerSession(private val _tcpPort: Int = DEFAULT_PORT_TCP, private val _udpPort: Int = DEFAULT_PORT_UDP) {
+class ServerSession(
+    private val _sessionId: Int = 0,
+    private val _tcpPort: Int = DEFAULT_PORT_TCP,
+    private val _udpPort: Int = DEFAULT_PORT_UDP,
+    private val _tickRate: Int = DEFAULT_TICKRATE) {
 
     private var server = Server()
     private var _initializedClass = false
     private val _instanceMap = HashMap<Int, ClientInstance>()
     private val _usernameMap = HashMap<String, Connection>()
 
-    private val _systems = ArrayList<System>()
+    /** Tick counter */
+    private var _tick = AtomicInteger(0)
+
+    /** Flag to check whatever the server is currently running a game */
+    private var _running = AtomicBoolean(false)
 
     init {
         Log.set(Log.LEVEL_NONE)
@@ -101,12 +142,12 @@ class ServerSession(private val _tcpPort: Int = DEFAULT_PORT_TCP, private val _u
         val listener = object : Listener() {
 
             override fun connected(connection: Connection) {
-                NETWORK_LOGGER.log(Level.INFO, "Connection established with id: ${connection.id}")
+                NetworkLogger.log(Level.INFO, "Connection established with id: ${connection.id}")
                 super.connected(connection)
             }
 
             override fun disconnected(connection: Connection) {
-                NETWORK_LOGGER.log(Level.INFO, "Connection closed with id: ${connection.id}")
+                NetworkLogger.log(Level.INFO, "Connection closed with id: ${connection.id}")
 
                 // sets the instance as offline
                 val instance = _instanceMap[connection.id]
@@ -126,7 +167,7 @@ class ServerSession(private val _tcpPort: Int = DEFAULT_PORT_TCP, private val _u
             }
 
             override fun received(connection: Connection, obj: Any) {
-                NETWORK_LOGGER.log(
+                NetworkLogger.log(
                     Level.ALL,
                     "Packet of type ${obj::class.simpleName} received from connection ${connection.id}"
                 )
@@ -138,23 +179,85 @@ class ServerSession(private val _tcpPort: Int = DEFAULT_PORT_TCP, private val _u
         }
         server.addListener(listener)
 
-        NETWORK_LOGGER.log(Level.INFO, "Server started with ports TCP: $DEFAULT_PORT_TCP | UDP: $DEFAULT_PORT_UDP")
+        NetworkLogger.log(Level.INFO, "Server started with ports TCP: $DEFAULT_PORT_TCP | UDP: $DEFAULT_PORT_UDP")
     }
 
     fun stop() {
         // kick every user
         server.sendToAllTCP(KickPacket("Server instance closing."))
         server.stop()
-        NETWORK_LOGGER.log(Level.INFO, "Server stopped.")
+        NetworkLogger.log(Level.INFO, "Server stopped.")
     }
 
     /**
      * Start the instance, entering a game loop that will simulate all the ticks and send network information.
      */
-    private fun startInstance() {
-        // registers statistically all the systems and components
+    fun startInstance() {
+        _running.set(true)
+
+        val timePerTickNs = (10e9f / _tickRate.toFloat()).toLong()
+        val timePerTickMs = (timePerTickNs / 10e3)
+        val timePerTickS = (timePerTickNs.toFloat() / 10e9f)
+
+        // game instance on the stack as all the network logic shouldn't need to directly access it. (Thread safety +
+        // decoupling)
+        val instance = Instance()
+
+        InstanceLogger.log(Level.INFO, "New game instance created on session $_sessionId.")
+
+        // registers statically all the components
+        instance.registerComponent<TransformComponent>()
+        instance.registerComponent<DynamicComponent>()
+        instance.registerComponent<NetworkComponent>()
+
+        InstanceLogger.log(Level.INFO, "Registered components on instance $_sessionId.")
+
+        // registers statically all the systems
+        val movementSystem = instance.registerSystem<MovementSystem>()
+        val networkSystem = instance.registerSystem<ServerNetworkSystem>()
 
 
+        // network synchronizer implementation for our network system
+        val networkSynchronizer = object : NetworkSynchronizer {
+            override fun sendProperties(changes: ChangedProperties) = sendAllLogged(DeltaSnapshotPacket(_tick.get(), changes))
+        }
+        movementSystem.initialize()
+        networkSystem.initialize(networkSynchronizer)
+
+        InstanceLogger.log(Level.INFO, "Registered and initialized systems on instance $_sessionId.")
+
+        // TODO ("Notify the users and send a full snapshot")
+        while (_running.get()) {
+            val startTime = Instant.now()
+
+            // game loop
+            movementSystem.update(instance, timePerTickS)
+            networkSystem.update(instance, timePerTickS)
+
+            // increments tick
+            _tick.incrementAndGet()
+            // calculates how much time did the loop computed.
+            val endTime = Instant.now()
+            val elapsed = Duration.between(startTime, endTime).toNanos()
+            if (elapsed <= timePerTickNs) {
+                Thread.sleep(((timePerTickNs - elapsed)/10e6).toLong())
+            } else {
+                // tick update took too long, this might cause severe lag issues
+                NetworkLogger.log(
+                    Level.WARNING,
+                    "Server is overloaded, tick update took too long: ${elapsed / 1000}ms (Max time: $timePerTickMs)"
+                )
+            }
+        }
+    }
+
+    /**
+     * Stops the instance, finishing the game (but not kicking the users)
+     */
+    fun stopInstance() {
+        _running.set(false)
+        _tick.set(0)
+        // TODO ("Send packets to notify the users")
     }
 
     private fun handleLogin(connection: Connection, packet: LoginPacket) {
@@ -172,12 +275,12 @@ class ServerSession(private val _tcpPort: Int = DEFAULT_PORT_TCP, private val _u
 
             _instanceMap[connection.id] = instance
             _usernameMap[packet.username] = connection
-            NETWORK_LOGGER.log(Level.INFO, "User logged for the first time with username: ${packet.username}")
+            NetworkLogger.log(Level.INFO, "User logged for the first time with username: ${packet.username}")
         } else {
             // there is already a session connected, the user was only delogged
             _instanceMap[connection.id]!!.connect(packet.username)
             _usernameMap[packet.username] = connection
-            NETWORK_LOGGER.log(Level.INFO, "User ${packet.username} re-logged to the server.")
+            NetworkLogger.log(Level.INFO, "User ${packet.username} re-logged to the server.")
         }
 
         _usernameMap[packet.username] = connection
@@ -186,7 +289,20 @@ class ServerSession(private val _tcpPort: Int = DEFAULT_PORT_TCP, private val _u
     private fun handleLogoff(connection: Connection) {
         if (_instanceMap[connection.id] != null) {
             _instanceMap[connection.id]!!.logout()
-            NETWORK_LOGGER.log(Level.INFO, "Connection ${connection.id} logged off.")
+            NetworkLogger.log(Level.INFO, "Connection ${connection.id} logged off.")
         }
     }
+
+    /**
+     * Send a packet to all the clients that have a logged session.
+     */
+    private fun sendAllLogged(packet: Any, exception: Int? = null) {
+        _instanceMap.forEach { id, session ->
+            if (session.status == ClientStatus.AUTHENTICATED) {
+                if (exception != null && id == exception) return@forEach
+                _usernameMap[session.username]!!.sendTCP(packet)
+            }
+        }
+    }
+
 }

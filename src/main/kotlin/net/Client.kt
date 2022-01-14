@@ -3,14 +3,11 @@ package net
 import com.esotericsoftware.kryonet.Client
 import com.esotericsoftware.kryonet.Connection
 import com.esotericsoftware.kryonet.Listener
-import net.packets.KickPacket
-import net.packets.LoginPacket
-import net.packets.LoginResponsePacket
-import net.packets.registerPackets
+import net.packets.*
 
 const val DEFAULT_TIMEOUT = 10000
 
-class ClientSession(val tcpPort: Int = DEFAULT_PORT_TCP, val udpPort: Int = DEFAULT_PORT_UDP) {
+open class ClientSession(val tcpPort: Int = DEFAULT_PORT_TCP, val udpPort: Int = DEFAULT_PORT_UDP) {
 
     private val _client = Client()
 
@@ -30,6 +27,7 @@ class ClientSession(val tcpPort: Int = DEFAULT_PORT_TCP, val udpPort: Int = DEFA
         val listener = object : Listener() {
             override fun received(connection: Connection, obj: Any) {
                 when (obj) {
+                    is DeltaSnapshotPacket -> handleDeltaSnapshot(obj)
                     is LoginResponsePacket -> handleLoginResponse(obj)
                     is KickPacket -> handleKick(obj)
                 }
@@ -63,6 +61,11 @@ class ClientSession(val tcpPort: Int = DEFAULT_PORT_TCP, val udpPort: Int = DEFA
     private fun handleKick(packet: KickPacket) {
         println("Kicked by server. Reason: ${packet.reason}")
         disconnect()
+    }
+
+    protected open fun handleDeltaSnapshot(packet: DeltaSnapshotPacket) {
+        println("Delta snapshot received: $packet")
+        TODO("Implement")
     }
 
     fun isConnected() = (_status == ClientStatus.CONNECTED)
