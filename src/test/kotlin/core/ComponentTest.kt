@@ -1,20 +1,13 @@
 package core
 
+import components.DynamicComponent
+import components.TransformComponent
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
 import java.lang.AssertionError
 
 internal class ComponentTest {
-
-    data class TransformComponent(var pos: Vec3 = Vec3(0.0f, 0.0f, 0.0f),
-                                  var rot: Vec3 = Vec3(0.0f, 0.0f, 0.0f),
-                                  var scale: Vec3 = Vec3(1.0f, 1.0f, 1.0f)
-    ) : IComponent
-
-    data class DynamicComponent(var speed: Vec3 = Vec3(0.0f, 0.0f, 0.0f),
-                                var acceleration: Vec3 = Vec3(0.0f, 0.0f, 0.0f)
-    ) : IComponent
 
     @Test
     fun testRegisterComponent() {

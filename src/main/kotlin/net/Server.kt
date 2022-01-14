@@ -83,6 +83,8 @@ class ServerSession(private val _tcpPort: Int = DEFAULT_PORT_TCP, private val _u
     private val _instanceMap = HashMap<Int, ClientInstance>()
     private val _usernameMap = HashMap<String, Connection>()
 
+    private val _systems = ArrayList<System>()
+
     init {
         Log.set(Log.LEVEL_NONE)
     }
@@ -144,6 +146,15 @@ class ServerSession(private val _tcpPort: Int = DEFAULT_PORT_TCP, private val _u
         server.sendToAllTCP(KickPacket("Server instance closing."))
         server.stop()
         NETWORK_LOGGER.log(Level.INFO, "Server stopped.")
+    }
+
+    /**
+     * Start the instance, entering a game loop that will simulate all the ticks and send network information.
+     */
+    private fun startInstance() {
+        // registers statistically all the systems and components
+
+
     }
 
     private fun handleLogin(connection: Connection, packet: LoginPacket) {

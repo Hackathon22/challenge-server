@@ -1,37 +1,13 @@
 package net
 
+import NetworkComponent
+import components.DynamicComponent
+import components.TransformComponent
 import core.*
 import org.junit.jupiter.api.Test
+import systems.MovementSystem
 
 internal class TestNetworkSystem {
-
-    data class TransformComponent(var pos: Vec3 = Vec3(0.0f, 0.0f, 0.0f),
-                                  var rot: Vec3 = Vec3(0.0f, 0.0f, 0.0f),
-                                  var scale: Vec3 = Vec3(1.0f, 1.0f, 1.0f)
-    ) : IComponent
-
-    data class DynamicComponent(var speed: Vec3 = Vec3(0.0f, 0.0f, 0.0f),
-                                var acceleration: Vec3 = Vec3(0.0f, 0.0f, 0.0f)
-    ) : IComponent
-
-    class MovementSystem : System() {
-
-        override fun initializeLogic(vararg arg: Any) : Boolean {
-            return true
-        }
-
-        override fun updateLogic(instance: Instance, delta: Float) {
-            entities.forEach {
-                val transformComponent = instance.getComponent<TransformComponent>(it)
-                val dynamicComponent = instance.getComponent<DynamicComponent>(it)
-
-                // acceleration modifies speed
-                dynamicComponent.speed += dynamicComponent.acceleration * delta
-                // speed modifies position
-                transformComponent.pos += dynamicComponent.speed * delta
-            }
-        }
-    }
 
     @Test
     fun testSimpleEntity() {

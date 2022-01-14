@@ -1,5 +1,6 @@
 package net
 
+import NetworkComponent
 import core.*
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
@@ -16,16 +17,6 @@ typealias ComponentValues = HashMap<KClass<out IComponent>, ValuePairs>
  * A map containing a ComponentValues map for each entity
  */
 typealias ChangedProperties = HashMap<Int, ComponentValues>
-
-/**
- * Component holding all the values to synchronize over network
- */
-class NetworkComponent : IComponent {
-    // map containing lists of component properties to synchronize for each Component
-    val synchronizedProperties = HashMap<KClass<out IComponent>, List<String>>()
-    val clientPredicted = false
-    val ignorePrediction = false
-}
 
 /**
  * Interfaces that needs to implement actions useful from the network system such as pushing/polling snapshots
