@@ -7,18 +7,21 @@ import com.esotericsoftware.kryonet.Server
 import com.esotericsoftware.minlog.Log
 import components.DynamicComponent
 import components.TransformComponent
+import core.Entity
 import core.Instance
 import net.packets.*
 import systems.MovementSystem
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDateTime
+import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.logging.Handler
 import java.util.logging.Level
 import java.util.logging.LogRecord
 import java.util.logging.Logger
+import kotlin.collections.HashMap
 
 
 const val DEFAULT_PORT_TCP = 2049
@@ -220,6 +223,7 @@ class ServerSession(
         // network synchronizer implementation for our network system
         val networkSynchronizer = object : NetworkSynchronizer {
             override fun sendProperties(changes: ChangedProperties) = sendAllLogged(DeltaSnapshotPacket(_tick.get(), changes))
+            override fun getEntityUUID(entity: Entity): UUID = instance.getComponent<NetworkComponent>(entity).networkID
         }
         movementSystem.initialize()
         networkSystem.initialize(networkSynchronizer)

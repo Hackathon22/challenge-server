@@ -12,10 +12,10 @@ import net.ChangedProperties
 @NoArg
 data class LoginPacket(val username: String, val password: String)
 
-@NoArg
 /**
  * Packet sent by the client to the server in order to log-off.
  */
+@NoArg
 class LogoffPacket
 
 /**
@@ -34,9 +34,24 @@ data class LoginResponsePacket(val success: Boolean, val message: String)
 @NoArg
 data class KickPacket(val reason: String)
 
+/**
+ * Packet sent by the server to the client when the tick delta update is ready
+ */
 @NoArg
 data class DeltaSnapshotPacket(val tick: Int, val properties: ChangedProperties)
 
+/**
+ * Packet sent by the client to the server to request a full Snapshot.
+ */
+@NoArg
+class FullSnapshotPacket
+
+/**
+ * Packet sent by the server to the username as a FullSnapshotPacket response.
+ * It contains the complete state of all the entities that have a network component.
+ */
+@NoArg
+data class FullSnapshotResponsePacket(val tick: Int, )
 
 /**
  * Static function that registers all the defined packets in the kryo object.

@@ -2,6 +2,8 @@ package net
 
 import NetworkComponent
 import core.*
+import java.util.*
+import kotlin.collections.HashMap
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 
@@ -16,7 +18,12 @@ typealias ComponentValues = HashMap<KClass<out IComponent>, ValuePairs>
 /**
  * A map containing a ComponentValues map for each entity
  */
-typealias ChangedProperties = HashMap<Int, ComponentValues>
+typealias ChangedProperties = HashMap<UUID, ComponentValues>
+
+/**
+ * A map containing the entities from their network ID
+ */
+typealias NetworkMap = HashMap<UUID, Entity>
 
 /**
  * Interfaces that needs to implement actions useful from the network system such as pushing/polling snapshots
@@ -24,6 +31,8 @@ typealias ChangedProperties = HashMap<Int, ComponentValues>
 interface NetworkSynchronizer {
 
     fun sendProperties(changes: ChangedProperties)
+
+    fun getEntityUUID(entity: Entity): UUID
 }
 
 /**
@@ -91,7 +100,7 @@ class ServerNetworkSystem : System() {
         /**
          * Inserts a new (valueName, value) pair in the commit dictionary.
          */
-        private fun insertChange(entity: Entity, componentType: KClass<out IComponent>, valueName: String, value: Any) {
+        private fun insertChange(entity: UUID, componentType: KClass<out IComponent>, valueName: String, value: Any) {
             if (_committedChanges[entity] == null) {
                 _committedChanges[entity] = ComponentValues()
             }
@@ -104,7 +113,7 @@ class ServerNetworkSystem : System() {
         /**
          * Inserts a new (valueName, value) pair in the commit dictionary.
          */
-        private fun insertSentChange(entity: Entity, componentType: KClass<out IComponent>, valueName: String, value: Any) {
+        private fun insertSentChange(entity: UUID, componentType: KClass<out IComponent>, valueName: String, value: Any) {
             if (_lastSentChanges[entity] == null) {
                 _lastSentChanges[entity] = ComponentValues()
             }
@@ -117,7 +126,7 @@ class ServerNetworkSystem : System() {
         /**
          * Checks wherever a change was already sent, and adds it to the committed changes if not.
          */
-        fun addChange(entity: Entity, componentType: KClass<out IComponent>, valueName: String, value: Any) {
+        fun addChange(entity: UUID, componentType: KClass<out IComponent>, valueName: String, value: Any) {
             cleanCommit()
             // checks if there is such value was already sent in a previous tick
             val lastSentChange = _lastSentChanges[entity]?.get(componentType)?.get(valueName)
@@ -135,6 +144,11 @@ class ServerNetworkSystem : System() {
     }
 
     private val _changeRecord = ChangeRecord()
+
+    /**
+     * A dictionary mapping the entities from their network ID.
+     */
+    private val _networkMap = NetworkMap()
 
     private var _synchronizer : NetworkSynchronizer? = null
 
@@ -159,7 +173,7 @@ class ServerNetworkSystem : System() {
                 // get the component's tracked values
                 for (valueName in valueList) {
                     val value = readComponentProperties(component, valueName)
-                    _changeRecord.addChange(entity, componentClass, valueName, value)
+                    _changeRecord.addChange(networkComponent.networkID, componentClass, valueName, value)
                 }
             }
         }
@@ -187,4 +201,11 @@ class ServerNetworkSystem : System() {
         _synchronizer!!.sendProperties(changedProperties)
     }
 
+    override fun onEntityAdded(entity: Entity) {
+        _networkMap[_synchronizer!!.getEntityUUID(entity)] = entity
+    }
+
+    override fun onEntityRemoved(entity: Entity) {
+        _networkMap.remove(_synchronizer!!.getEntityUUID(entity))
+    }
 }

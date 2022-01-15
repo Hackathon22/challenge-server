@@ -11,7 +11,7 @@ import kotlin.reflect.full.createType
 
 abstract class System {
     // set containing unique values, with an importance in order
-    var entities = LinkedHashSet<Entity>()
+    protected var entities = LinkedHashSet<Entity>()
 
     private var _initialized = false
 
@@ -25,9 +25,24 @@ abstract class System {
         _initialized = true
     }
 
-    abstract fun initializeLogic(vararg arg : Any) : Boolean
+    protected abstract fun initializeLogic(vararg arg : Any) : Boolean
 
     protected abstract fun updateLogic(instance: Instance, delta: Float)
+
+    protected abstract fun onEntityAdded(entity: Entity)
+
+    protected abstract fun onEntityRemoved(entity: Entity)
+
+    fun addEntity(entity: Entity) {
+        entities.add(entity)
+        onEntityAdded(entity)
+    }
+
+    fun removeEntity(entity: Entity) {
+        entities.remove(entity)
+        onEntityRemoved(entity)
+    }
+
 }
 
 class SystemManager {
@@ -48,7 +63,7 @@ class SystemManager {
     }
 
     fun entityDestroyed(entity: Entity) {
-        _systemMap.forEach { _, v -> v.entities.remove(entity) }
+        _systemMap.forEach { _, v -> v.removeEntity(entity) }
     }
 
     fun entitySignatureChanged(entity: Entity, signature: Signature) {
@@ -58,11 +73,11 @@ class SystemManager {
                 val entitySignature = signature.clone() as Signature
                 entitySignature.and(systemSignature)
                 if (entitySignature == systemSignature) {
-                    v.entities.add(entity)
+                    v.addEntity(entity)
                     continue
                 }
             }
-            v.entities.remove(entity)
+            v.removeEntity(entity)
         }
     }
 }
