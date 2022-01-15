@@ -1,12 +1,14 @@
 import core.IComponent
 import kotlin.reflect.KClass
 
+typealias PropertyRegister = HashMap<KClass<out IComponent>, ArrayList<String>>
+
 /**
  * Component holding all the values to synchronize over network
  */
 class NetworkComponent : IComponent {
     // map containing lists of component properties to synchronize for each Component
-    val synchronizedProperties = HashMap<KClass<out IComponent>, List<String>>()
-    val clientPredicted = false
-    val ignorePrediction = false
+    val synchronizedProperties = PropertyRegister()
+    var clientPredicted = false
+    var ignorePrediction = false
 }

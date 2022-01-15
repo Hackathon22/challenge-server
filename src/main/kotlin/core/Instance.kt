@@ -1,5 +1,6 @@
 package core
 
+import parser.ComponentMap
 import kotlin.reflect.KClass
 
 class Instance {
@@ -39,6 +40,10 @@ class Instance {
         _systemManager.entitySignatureChanged(entity, signature)
     }
 
+    internal fun addComponentDynamic(entity: Entity, component: IComponent) {
+        _componentManager.addComponentDynamic(entity, component)
+    }
+
     internal inline fun <reified T : IComponent> removeComponent(entity: Entity, component: T) {
         _componentManager.removeComponent<T>(entity)
 
@@ -67,6 +72,27 @@ class Instance {
 
     internal inline fun <reified T : System> setSystemSignature(signature: Signature) {
         _systemManager.setSignature<T>(signature)
+    }
+
+    fun createComponentMap() : ComponentMap {
+        val componentMap = ComponentMap()
+        for (entity in 0 until entities.size) {
+            componentMap[entity] = ArrayList()
+            for (componentClass in _componentManager.registeredComponents()) {
+                val component = _componentManager.getComponentDynamicUnsafe(entity, componentClass)
+                if (component != null) componentMap[entity]!!.add(component)
+            }
+        }
+        return componentMap
+    }
+
+    fun loadComponentMap(componentMap : ComponentMap) {
+        componentMap.forEach { (_, components) ->
+            val entity = createEntity()
+            components.forEach{
+                addComponentDynamic(entity, it)
+            }
+        }
     }
 
 }

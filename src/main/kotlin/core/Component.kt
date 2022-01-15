@@ -1,5 +1,7 @@
 package core
 
+import components.DynamicComponent
+import components.TransformComponent
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
@@ -18,7 +20,7 @@ interface IComponentArray {
     fun entityDestroyed(entity: Entity)
 }
 
- class ComponentArray<T : IComponent> : IComponentArray {
+class ComponentArray<T : IComponent> : IComponentArray {
 
     private val _componentArray = ArrayList<T>()
 
@@ -28,14 +30,14 @@ interface IComponentArray {
 
     private var _indexCounter = 0
 
-    fun insertData(entity: Entity, component: T) {
+    fun insertData(entity: Entity, component: IComponent) {
         assert(_entityToIndex[entity] == null)
 
         val newIndex = _indexCounter
         _entityToIndex[entity] = newIndex
         _indexToEntity[newIndex] = entity
 
-        _componentArray.add(component)
+        _componentArray.add(component as T)
 
         _indexCounter++
     }
@@ -55,13 +57,17 @@ interface IComponentArray {
         _indexToEntity.remove(indexOfLastElement)
         _componentArray.removeAt(indexOfLastElement)
         _indexCounter--
-    }
+}
 
     fun getData(entity: Entity) : T {
         assert(_entityToIndex[entity] != null)
         return _componentArray[_entityToIndex[entity]!!]
     }
 
+    fun getDataUnsafe(entity: Entity) : T? {
+        val index = _entityToIndex[entity] ?: return null
+        return _componentArray[index]
+    }
     override fun entityDestroyed(entity: Entity) {
         if (_entityToIndex[entity] != null) {
             removeData(entity)
@@ -101,6 +107,10 @@ class ComponentManager {
         componentArray.insertData(entity, component)
     }
 
+    internal fun addComponentDynamic(entity: Entity, component: IComponent) {
+        _componentArray[component::class]!!.insertData(entity, component)
+    }
+
     internal inline fun <reified T: IComponent> removeComponent(entity: Entity) {
         val componentArray = _getComponentArray<T>()
         componentArray.removeData(entity)
@@ -122,5 +132,11 @@ class ComponentManager {
     fun getComponentDynamic(entity: Entity, component: KClass<out IComponent>) : IComponent {
         return _getComponentArrayDynamic(component).getData(entity)
     }
+
+    fun getComponentDynamicUnsafe(entity: Entity, component: KClass<out IComponent>) : IComponent? {
+        return _getComponentArrayDynamic(component).getDataUnsafe(entity)
+    }
+
+    fun registeredComponents() : MutableSet<KClass<out IComponent>> = _componentArray.keys
 
 }

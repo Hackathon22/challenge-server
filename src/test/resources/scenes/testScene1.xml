@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<java version="15" class="java.beans.XMLDecoder">
+ <object class="java.util.HashMap">
+  <void method="put">
+   <int>0</int>
+   <object class="java.util.ArrayList">
+    <void method="add">
+     <object class="components.TransformComponent" id="TransformComponent0">
+      <void property="pos">
+       <void property="x">
+        <int>1</int>
+       </void>
+       <void property="y">
+        <int>2</int>
+       </void>
+       <void property="z">
+        <int>0</int>
+       </void>
+      </void>
+     </object>
+    </void>
+    <void method="add">
+     <object class="parser.SerializableNetworkComponent" id="SerializableNetworkComponent0"/>
+    </void>
+   </object>
+  </void>
+  <void method="put">
+   <int>1</int>
+   <object class="java.util.ArrayList">
+    <void method="add">
+     <object class="components.TransformComponent" id="TransformComponent1">
+      <void property="pos">
+       <void property="x">
+        <int>-1</int>
+       </void>
+       <void property="y">
+        <int>0</int>
+       </void>
+       <void property="z">
+        <int>0</int>
+       </void>
+      </void>
+     </object>
+    </void>
+   </object>
+  </void>
+ </object>
+<void class="java.util.ArrayList" id="ArrayList0">
+ <void method="add">
+  <string>rot</string>
+ </void>
+ <void method="add">
+  <string>scale</string>
+ </void>
+ <void method="add">
+  <string>pos</string>
+ </void>
+</void>
+<void class="parser.SerializableNetworkComponent" id="Field0" method="getField">
+ <string>synchronizedProperties</string>
+ <void id="HashMap0" method="get">
+  <object idref="SerializableNetworkComponent0"/>
+  <void method="put">
+   <string>transformComponent</string>
+   <object idref="ArrayList0"/>
+  </void>
+ </void>
+</void>
+<void idref="HashMap0"/>
+</java>

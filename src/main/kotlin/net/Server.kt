@@ -297,7 +297,7 @@ class ServerSession(
      * Send a packet to all the clients that have a logged session.
      */
     private fun sendAllLogged(packet: Any, exception: Int? = null) {
-        _instanceMap.forEach { id, session ->
+        _instanceMap.forEach { (id, session) ->
             if (session.status == ClientStatus.AUTHENTICATED) {
                 if (exception != null && id == exception) return@forEach
                 _usernameMap[session.username]!!.sendTCP(packet)
