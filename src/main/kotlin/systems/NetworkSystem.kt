@@ -1,11 +1,14 @@
-package net
+package systems
 
 import NetworkComponent
+import components.NameComponent
 import core.*
 import java.util.*
+import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
+import kotlin.reflect.jvm.internal.impl.resolve.constants.KClassValue
 
 
 typealias ValuePairs = HashMap<String, Any>
@@ -13,12 +16,12 @@ typealias ValuePairs = HashMap<String, Any>
 /**
  * a map that gives for each component a list of (properties, value) changes
  */
-typealias ComponentValues = HashMap<KClass<out IComponent>, ValuePairs>
+typealias ComponentProperties = HashMap<KClass<out IComponent>, ValuePairs>
 
 /**
  * A map containing a ComponentValues map for each entity
  */
-typealias ChangedProperties = HashMap<UUID, ComponentValues>
+typealias NetworkedProperties = HashMap<UUID, ComponentProperties>
 
 /**
  * A map containing the entities from their network ID
@@ -30,9 +33,11 @@ typealias NetworkMap = HashMap<UUID, Entity>
  */
 interface NetworkSynchronizer {
 
-    fun sendProperties(changes: ChangedProperties)
+    fun sendProperties(changes: NetworkedProperties)
 
-    fun getEntityUUID(entity: Entity): UUID
+    fun getEntityNetworkID(entity: Entity): UUID?
+
+    fun setEntityNetworkID(entity: Entity, networkID : UUID?)
 }
 
 /**
@@ -50,12 +55,12 @@ class ServerNetworkSystem : System() {
          * This dictionary is checked to see if a networked value has already been sent or not over the network.
          * This is useful to avoid sending values that didn't change since the last tick.
          */
-        private val _lastSentChanges = ChangedProperties()
+        private val _lastSentChanges = NetworkedProperties()
 
         /**
          * A dictionary containing networked values that changed since the last tick and that will be sent over the network.
          */
-        private val _committedChanges = ChangedProperties()
+        private val _committedChanges = NetworkedProperties()
 
         /**
          * Commit flag. Is set to true when all the changes have been saved and are ready to be sent over network.
@@ -81,7 +86,7 @@ class ServerNetworkSystem : System() {
         /**
          * Commits the changes and returns the dictionary containing them.
          */
-        fun commit(): ChangedProperties {
+        fun commit(): NetworkedProperties {
             _committed = true
             return _committedChanges
         }
@@ -102,7 +107,7 @@ class ServerNetworkSystem : System() {
          */
         private fun insertChange(entity: UUID, componentType: KClass<out IComponent>, valueName: String, value: Any) {
             if (_committedChanges[entity] == null) {
-                _committedChanges[entity] = ComponentValues()
+                _committedChanges[entity] = ComponentProperties()
             }
             if (_committedChanges[entity]!![componentType] == null) {
                 _committedChanges[entity]!![componentType] = ValuePairs()
@@ -115,7 +120,7 @@ class ServerNetworkSystem : System() {
          */
         private fun insertSentChange(entity: UUID, componentType: KClass<out IComponent>, valueName: String, value: Any) {
             if (_lastSentChanges[entity] == null) {
-                _lastSentChanges[entity] = ComponentValues()
+                _lastSentChanges[entity] = ComponentProperties()
             }
             if (_lastSentChanges[entity]!![componentType] == null) {
                 _lastSentChanges[entity]!![componentType] = ValuePairs()
@@ -143,6 +148,9 @@ class ServerNetworkSystem : System() {
         }
     }
 
+    /**
+     * A wrapper that takes care of retrieving only the values that changed.
+     */
     private val _changeRecord = ChangeRecord()
 
     /**
@@ -150,6 +158,10 @@ class ServerNetworkSystem : System() {
      */
     private val _networkMap = NetworkMap()
 
+    /**
+     * Interface object that allows to send data to the network and retrieve entity IDs without needing
+     * to directly access to the server routines or the game instance.
+     */
     private var _synchronizer : NetworkSynchronizer? = null
 
     /**
@@ -164,19 +176,34 @@ class ServerNetworkSystem : System() {
     /**
      * Reads all the properties tracked by the NetworkComponent.
      */
-    private fun saveProperties(instance: Instance, delta: Float) {
-        for (entity in entities) {
-            val networkComponent = instance.getComponent<NetworkComponent>(entity)
-            // iterates over the components and values to gather
-            for ((componentClass, valueList) in networkComponent.synchronizedProperties) {
-                val component = instance.getComponentDynamic(entity, componentClass)
-                // get the component's tracked values
-                for (valueName in valueList) {
-                    val value = readComponentProperties(component, valueName)
-                    _changeRecord.addChange(networkComponent.networkID, componentClass, valueName, value)
+    private fun saveProperties(properties: NetworkedProperties) {
+        properties.forEach { (networkID, components) ->
+            components.forEach { (componentType, propertyList) ->
+                propertyList.forEach { (propertyName, propertyValue) ->
+                    _changeRecord.addChange(networkID, componentType, propertyName, propertyValue)
                 }
             }
         }
+    }
+
+    private fun loadProperties(instance: Instance) : NetworkedProperties {
+        val properties = NetworkedProperties()
+        entities.forEach { entity ->
+            val networkComponent = instance.getComponent<NetworkComponent>(entity)
+            properties[networkComponent.networkID!!] = ComponentProperties()
+            // iterates over the components and values
+            networkComponent.synchronizedProperties.forEach { (componentType, propertyList) ->
+                val component = instance.getComponentDynamic(entity, componentType)
+                val componentProperties = ValuePairs()
+                // get the component's tracked values
+                propertyList.forEach { propertyName ->
+                    val value = readComponentProperties(component, propertyName)
+                    componentProperties[propertyName] = value
+                }
+                properties[networkComponent.networkID!!]!![componentType] = componentProperties
+            }
+        }
+        return properties
     }
 
     override fun initializeLogic(vararg arg: Any): Boolean {
@@ -190,9 +217,23 @@ class ServerNetworkSystem : System() {
         return false;
     }
 
+    fun getFullSnapshot(instance: Instance) : NetworkedProperties {
+        val allProperties = loadProperties(instance)
+        allProperties.forEach { (networkID, components) ->
+            // adds a component containing the entity name, as this is generally not included in the networked properties
+            val entity = _networkMap[networkID]!!
+            val entityName = instance.getComponent<NameComponent>(entity).entityName
+            val valuePairs = ValuePairs()
+            valuePairs["name"] = entityName
+            components[NameComponent::class] = valuePairs
+        }
+        return allProperties
+    }
+
     override fun updateLogic(instance: Instance, delta: Float) {
         // read all the tracked properties and saves them in the change record
-        saveProperties(instance, delta)
+        val loadedProperties = loadProperties(instance)
+        saveProperties(loadedProperties)
 
         // commits the saved changes and get them
         val changedProperties = _changeRecord.commit()
@@ -202,10 +243,14 @@ class ServerNetworkSystem : System() {
     }
 
     override fun onEntityAdded(entity: Entity) {
-        _networkMap[_synchronizer!!.getEntityUUID(entity)] = entity
+        val networkID = UUID.randomUUID()
+        _synchronizer!!.setEntityNetworkID(entity, networkID)
+        _networkMap[networkID] = entity
     }
 
     override fun onEntityRemoved(entity: Entity) {
-        _networkMap.remove(_synchronizer!!.getEntityUUID(entity))
+        val networkID = _synchronizer!!.getEntityNetworkID(entity)
+        _synchronizer!!.setEntityNetworkID(entity, null)
+        _networkMap.remove(networkID)
     }
 }

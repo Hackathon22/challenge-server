@@ -6,11 +6,17 @@ import com.esotericsoftware.kryonet.Listener
 import com.esotericsoftware.kryonet.Server
 import com.esotericsoftware.minlog.Log
 import components.DynamicComponent
+import components.NameComponent
 import components.TransformComponent
 import core.Entity
+import core.EntityFactory
 import core.Instance
+import core.Signature
 import net.packets.*
+import systems.NetworkedProperties
 import systems.MovementSystem
+import systems.NetworkSynchronizer
+import systems.ServerNetworkSystem
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDateTime
@@ -124,13 +130,59 @@ class ServerSession(
     private val _usernameMap = HashMap<String, Connection>()
 
     /** Tick counter */
-    private var _tick = AtomicInteger(0)
+    private val _tick = AtomicInteger(0)
 
     /** Flag to check whatever the server is currently running a game */
-    private var _running = AtomicBoolean(false)
+    private val _running = AtomicBoolean(false)
+
+    /** Game instance and systems */
+    private var _instance = Instance()
+    private var _networkSystem : ServerNetworkSystem? = null
+    private var _movementSystem : MovementSystem? = null
+
+    private var _sceneName = "baseScene"
 
     init {
         Log.set(Log.LEVEL_NONE)
+
+        InstanceLogger.log(Level.INFO, "New game instance created on session $_sessionId.")
+
+        // starts loading entity configuration
+        EntityFactory.loadEntities()
+        InstanceLogger.log(Level.INFO, "Initialized entity factory on session $_sessionId.")
+
+        // registers statically all the components
+        _instance.registerComponent<TransformComponent>()
+        _instance.registerComponent<DynamicComponent>()
+        _instance.registerComponent<NetworkComponent>()
+
+        InstanceLogger.log(Level.INFO, "Registered components on instance $_sessionId.")
+
+        _networkSystem = _instance.registerSystem<ServerNetworkSystem>() as ServerNetworkSystem
+        // network synchronizer implementation for our network system
+        val networkSynchronizer = object : NetworkSynchronizer {
+            override fun sendProperties(changes: NetworkedProperties) = sendAllLogged(DeltaSnapshotPacket(_tick.get(), changes))
+            override fun getEntityNetworkID(entity: Entity): UUID? = _instance.getComponent<NetworkComponent>(entity).networkID
+            override fun setEntityNetworkID(entity: Entity, networkID: UUID?) {
+                _instance.getComponent<NetworkComponent>(entity).networkID = networkID
+            }
+        }
+        _networkSystem!!.initialize(networkSynchronizer)
+        // sets the network system signature. It requires at least a network component and a name component.
+        val networkSignature = Signature()
+        networkSignature.set(_instance.getComponentType<NetworkComponent>(), true)
+        networkSignature.set(_instance.getComponentType<NameComponent>(), true)
+        _instance.setSystemSignature<ServerNetworkSystem>(networkSignature)
+
+        _movementSystem = _instance.registerSystem<MovementSystem>() as MovementSystem
+        _movementSystem!!.initialize()
+
+        val movementSignature = Signature()
+        movementSignature.set(_instance.getComponentType<TransformComponent>(), true)
+        movementSignature.set(_instance.getComponentType<DynamicComponent>(), true)
+        _instance.setSystemSignature<MovementSystem>(movementSignature)
+
+        InstanceLogger.log(Level.INFO, "Registered and initialized systems on instance $_sessionId.")
     }
 
     fun start() {
@@ -177,6 +229,7 @@ class ServerSession(
                 when (obj) {
                     is LoginPacket -> handleLogin(connection, obj)
                     is LogoffPacket -> handleLogoff(connection)
+                    is FullSnapshotPacket -> handleFullSnapshot(connection, obj)
                 }
             }
         }
@@ -202,41 +255,12 @@ class ServerSession(
         val timePerTickMs = (timePerTickNs / 10e3)
         val timePerTickS = (timePerTickNs.toFloat() / 10e9f)
 
-        // game instance on the stack as all the network logic shouldn't need to directly access it. (Thread safety +
-        // decoupling)
-        val instance = Instance()
-
-        InstanceLogger.log(Level.INFO, "New game instance created on session $_sessionId.")
-
-        // registers statically all the components
-        instance.registerComponent<TransformComponent>()
-        instance.registerComponent<DynamicComponent>()
-        instance.registerComponent<NetworkComponent>()
-
-        InstanceLogger.log(Level.INFO, "Registered components on instance $_sessionId.")
-
-        // registers statically all the systems
-        val movementSystem = instance.registerSystem<MovementSystem>()
-        val networkSystem = instance.registerSystem<ServerNetworkSystem>()
-
-
-        // network synchronizer implementation for our network system
-        val networkSynchronizer = object : NetworkSynchronizer {
-            override fun sendProperties(changes: ChangedProperties) = sendAllLogged(DeltaSnapshotPacket(_tick.get(), changes))
-            override fun getEntityUUID(entity: Entity): UUID = instance.getComponent<NetworkComponent>(entity).networkID
-        }
-        movementSystem.initialize()
-        networkSystem.initialize(networkSynchronizer)
-
-        InstanceLogger.log(Level.INFO, "Registered and initialized systems on instance $_sessionId.")
-
-        // TODO ("Notify the users and send a full snapshot")
         while (_running.get()) {
             val startTime = Instant.now()
 
             // game loop
-            movementSystem.update(instance, timePerTickS)
-            networkSystem.update(instance, timePerTickS)
+            _movementSystem!!.update(_instance, timePerTickS)
+            _networkSystem!!.update(_instance, timePerTickS)
 
             // increments tick
             _tick.incrementAndGet()
@@ -295,6 +319,20 @@ class ServerSession(
             _instanceMap[connection.id]!!.logout()
             NetworkLogger.log(Level.INFO, "Connection ${connection.id} logged off.")
         }
+    }
+
+    private fun getLoggedInstance(connection: Connection) : ClientInstance? {
+        val instance = _instanceMap[connection.id]
+        if (instance == null || instance.status != ClientStatus.AUTHENTICATED) {
+            NetworkLogger.log(Level.INFO, "Received request from non authenticated connection ${connection.id}.")
+        }
+        return instance
+    }
+
+    private fun handleFullSnapshot(connection: Connection, fullSnapshotPacket: FullSnapshotPacket) {
+        val instance = getLoggedInstance(connection) ?: return
+        val allProperties = _networkSystem!!.getFullSnapshot(_instance)
+        val response = FullSnapshotResponsePacket(_tick.get(), _sceneName, allProperties)
     }
 
     /**

@@ -14,5 +14,5 @@ class NetworkComponent : IComponent {
     val synchronizedProperties = PropertyRegister()
     var clientPredicted = false
     var ignorePrediction = false
-    val networkID = UUID.randomUUID()
+    var networkID : UUID? = null
 }

@@ -2,7 +2,7 @@ package net.packets
 
 import com.esotericsoftware.kryo.Kryo
 import core.NoArg
-import net.ChangedProperties
+import systems.NetworkedProperties
 
 /**
  * Packet sent by the client to the server in order to log-in.
@@ -38,7 +38,7 @@ data class KickPacket(val reason: String)
  * Packet sent by the server to the client when the tick delta update is ready
  */
 @NoArg
-data class DeltaSnapshotPacket(val tick: Int, val properties: ChangedProperties)
+data class DeltaSnapshotPacket(val tick: Int, val properties: NetworkedProperties)
 
 /**
  * Packet sent by the client to the server to request a full Snapshot.
@@ -51,7 +51,7 @@ class FullSnapshotPacket
  * It contains the complete state of all the entities that have a network component.
  */
 @NoArg
-data class FullSnapshotResponsePacket(val tick: Int, )
+data class FullSnapshotResponsePacket(val tick: Int, val sceneName: String, val entities: NetworkedProperties)
 
 /**
  * Static function that registers all the defined packets in the kryo object.

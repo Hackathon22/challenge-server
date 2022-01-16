@@ -1,6 +1,6 @@
 package core
 
-import parser.ComponentMap
+import parser.Scene
 import kotlin.reflect.KClass
 
 class Instance {
@@ -74,20 +74,20 @@ class Instance {
         _systemManager.setSignature<T>(signature)
     }
 
-    fun createComponentMap() : ComponentMap {
-        val componentMap = ComponentMap()
+    fun createComponentMap() : Scene {
+        val scene = Scene()
         for (entity in 0 until entities.size) {
-            componentMap[entity] = ArrayList()
+            scene[entity] = ArrayList()
             for (componentClass in _componentManager.registeredComponents()) {
                 val component = _componentManager.getComponentDynamicUnsafe(entity, componentClass)
-                if (component != null) componentMap[entity]!!.add(component)
+                if (component != null) scene[entity]!!.add(component)
             }
         }
-        return componentMap
+        return scene
     }
 
-    fun loadComponentMap(componentMap : ComponentMap) {
-        componentMap.forEach { (_, components) ->
+    fun loadComponentMap(scene : Scene) {
+        scene.forEach { (_, components) ->
             val entity = createEntity()
             components.forEach{
                 addComponentDynamic(entity, it)
