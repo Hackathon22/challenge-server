@@ -3,7 +3,9 @@ package net
 import com.esotericsoftware.kryonet.Client
 import com.esotericsoftware.kryonet.Connection
 import com.esotericsoftware.kryonet.Listener
+import core.Instance
 import net.packets.*
+import java.util.concurrent.atomic.AtomicBoolean
 
 const val DEFAULT_TIMEOUT = 10000
 
@@ -14,6 +16,10 @@ open class ClientSession(val tcpPort: Int = DEFAULT_PORT_TCP, val udpPort: Int =
     private var _status = ClientStatus.DISCONNECTED
     private var _initializedClass = false
     private var _username : String? = null
+
+    private val _running = AtomicBoolean(false)
+
+    private val _instance = Instance()
 
     fun connect(address: String, username: String, password: String) {
         _username = username
@@ -30,6 +36,7 @@ open class ClientSession(val tcpPort: Int = DEFAULT_PORT_TCP, val udpPort: Int =
                     is DeltaSnapshotPacket -> handleDeltaSnapshot(obj)
                     is LoginResponsePacket -> handleLoginResponse(obj)
                     is KickPacket -> handleKick(obj)
+                    is FullSnapshotResponsePacket -> handleFullSnapshot(obj)
                 }
             }
         }
@@ -48,6 +55,10 @@ open class ClientSession(val tcpPort: Int = DEFAULT_PORT_TCP, val udpPort: Int =
         _status = ClientStatus.DISCONNECTED
     }
 
+    fun run() {
+
+    }
+
 
     private fun handleLoginResponse(packet: LoginResponsePacket) {
         if (packet.success) {
@@ -63,9 +74,13 @@ open class ClientSession(val tcpPort: Int = DEFAULT_PORT_TCP, val udpPort: Int =
         disconnect()
     }
 
-    protected open fun handleDeltaSnapshot(packet: DeltaSnapshotPacket) {
+    protected fun handleDeltaSnapshot(packet: DeltaSnapshotPacket) {
         println("Delta snapshot received: $packet")
         TODO("Implement")
+    }
+
+    protected fun handleFullSnapshot(packet: FullSnapshotResponsePacket) {
+
     }
 
     fun isConnected() = (_status == ClientStatus.CONNECTED)

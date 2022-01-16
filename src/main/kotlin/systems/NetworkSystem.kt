@@ -4,6 +4,7 @@ import NetworkComponent
 import components.NameComponent
 import core.*
 import java.util.*
+import java.util.stream.StreamSupport
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import kotlin.reflect.KClass
@@ -217,15 +218,19 @@ class ServerNetworkSystem : System() {
         return false;
     }
 
+    private fun addEntityName(instance: Instance, networkID: UUID, components: ComponentProperties) {
+        // adds a component containing the entity name, as this is generally not included in the networked properties
+        val entity = _networkMap[networkID]!!
+        val entityName = instance.getComponent<NameComponent>(entity).entityName
+        val valuePairs = ValuePairs()
+        valuePairs["name"] = entityName
+        components[NameComponent::class] = valuePairs
+    }
+
     fun getFullSnapshot(instance: Instance) : NetworkedProperties {
         val allProperties = loadProperties(instance)
         allProperties.forEach { (networkID, components) ->
-            // adds a component containing the entity name, as this is generally not included in the networked properties
-            val entity = _networkMap[networkID]!!
-            val entityName = instance.getComponent<NameComponent>(entity).entityName
-            val valuePairs = ValuePairs()
-            valuePairs["name"] = entityName
-            components[NameComponent::class] = valuePairs
+            addEntityName(instance, networkID, components)
         }
         return allProperties
     }

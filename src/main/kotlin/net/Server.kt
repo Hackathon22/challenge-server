@@ -8,10 +8,7 @@ import com.esotericsoftware.minlog.Log
 import components.DynamicComponent
 import components.NameComponent
 import components.TransformComponent
-import core.Entity
-import core.EntityFactory
-import core.Instance
-import core.Signature
+import core.*
 import net.packets.*
 import systems.NetworkedProperties
 import systems.MovementSystem
@@ -330,9 +327,10 @@ class ServerSession(
     }
 
     private fun handleFullSnapshot(connection: Connection, fullSnapshotPacket: FullSnapshotPacket) {
-        val instance = getLoggedInstance(connection) ?: return
+        getLoggedInstance(connection) ?: return
         val allProperties = _networkSystem!!.getFullSnapshot(_instance)
         val response = FullSnapshotResponsePacket(_tick.get(), _sceneName, allProperties)
+        connection.sendTCP(response)
     }
 
     /**

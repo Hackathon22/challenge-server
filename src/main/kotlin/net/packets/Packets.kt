@@ -62,5 +62,7 @@ fun registerPackets(kryo: Kryo) {
     kryo.register(LoginResponsePacket::class.java)
     kryo.register(KickPacket::class.java)
     kryo.register(DeltaSnapshotPacket::class.java)
+    kryo.register(FullSnapshotPacket::class.java)
+    kryo.register(FullSnapshotResponsePacket::class.java)
     kryo.register(java.util.HashMap::class.java)
 }
