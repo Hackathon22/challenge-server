@@ -1,7 +1,5 @@
 package core
 
-import components.DynamicComponent
-import components.TransformComponent
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
@@ -86,6 +84,10 @@ class ComponentManager {
         return _componentArray[component]!!
     }
 
+    internal fun _getComponentArrayDynamicUnsafe(component: KClass<out IComponent>) : ComponentArray<out IComponent>? {
+        return _componentArray[component]
+    }
+
     internal inline fun <reified T: IComponent> _getComponentArray() : ComponentArray<T> {
         assert(_componentArray[T::class] != null)
         return _componentArray[T::class]!! as ComponentArray<T>
@@ -134,7 +136,7 @@ class ComponentManager {
     }
 
     fun getComponentDynamicUnsafe(entity: Entity, component: KClass<out IComponent>) : IComponent? {
-        return _getComponentArrayDynamic(component).getDataUnsafe(entity)
+        return _getComponentArrayDynamicUnsafe(component)?.getDataUnsafe(entity)
     }
 
     fun registeredComponents() : MutableSet<KClass<out IComponent>> = _componentArray.keys

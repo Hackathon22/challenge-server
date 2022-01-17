@@ -74,6 +74,15 @@ class Instance {
         _systemManager.setSignature<T>(signature)
     }
 
+    fun getAllComponents(entity: Entity) : ArrayList<IComponent> {
+        val components = ArrayList<IComponent>()
+        for (componentClass in _componentManager.registeredComponents()) {
+            val component = _componentManager.getComponentDynamicUnsafe(entity, componentClass)
+            if (component != null) components.add(component)
+        }
+        return components
+    }
+
     fun createComponentMap() : Scene {
         val scene = Scene()
         for (entity in 0 until entities.size) {

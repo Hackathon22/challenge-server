@@ -1,15 +1,12 @@
 package systems
 
 import NetworkComponent
-import components.NameComponent
 import core.*
 import java.util.*
-import java.util.stream.StreamSupport
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
-import kotlin.reflect.jvm.internal.impl.resolve.constants.KClassValue
 
 
 typealias ValuePairs = HashMap<String, Any>
@@ -30,11 +27,16 @@ typealias NetworkedProperties = HashMap<UUID, ComponentProperties>
 typealias NetworkMap = HashMap<UUID, Entity>
 
 /**
+ * A list containing for each networked entity a list of snapshots
+ */
+typealias FullSnapshot = ArrayList<ArrayList<IComponent>>
+
+/**
  * Interfaces that needs to implement actions useful from the network system such as pushing/polling snapshots
  */
 interface NetworkSynchronizer {
 
-    fun sendProperties(changes: NetworkedProperties)
+    fun sendProperties(changes: NetworkedProperties, addedEntities: FullSnapshot, removedEntities : List<UUID>)
 
     fun getEntityNetworkID(entity: Entity): UUID?
 
@@ -166,6 +168,18 @@ class ServerNetworkSystem : System() {
     private var _synchronizer : NetworkSynchronizer? = null
 
     /**
+     * Array containing all the entities added since the last sent delta snapshot. The contained entities will be
+     * sent in the next delta snapshot and then removed from this list.
+     */
+    private var _addedEntities = ArrayList<Entity>()
+
+    /**
+     * Same as added entities, but for removed entities. The network ID is used instead as it simply needs to be sent
+     * over network, unlike added Entities where components values need to be retrieved first by this system.
+     */
+    private var _removedEntities = ArrayList<UUID>()
+
+    /**
      * Dynamically reads a property from a component and the property name
      */
     @Suppress("UNCHECKED_CAST")
@@ -187,7 +201,7 @@ class ServerNetworkSystem : System() {
         }
     }
 
-    private fun loadProperties(instance: Instance) : NetworkedProperties {
+    private fun loadNetworkedProperties(instance: Instance) : NetworkedProperties {
         val properties = NetworkedProperties()
         entities.forEach { entity ->
             val networkComponent = instance.getComponent<NetworkComponent>(entity)
@@ -218,36 +232,53 @@ class ServerNetworkSystem : System() {
         return false;
     }
 
-    private fun addEntityName(instance: Instance, networkID: UUID, components: ComponentProperties) {
-        // adds a component containing the entity name, as this is generally not included in the networked properties
-        val entity = _networkMap[networkID]!!
-        val entityName = instance.getComponent<NameComponent>(entity).entityName
-        val valuePairs = ValuePairs()
-        valuePairs["name"] = entityName
-        components[NameComponent::class] = valuePairs
-    }
-
-    fun getFullSnapshot(instance: Instance) : NetworkedProperties {
-        val allProperties = loadProperties(instance)
-        allProperties.forEach { (networkID, components) ->
-            addEntityName(instance, networkID, components)
+    /**
+     * Returns a {@link FullSnapshot} object containing all the components to all the networked entities (even the
+     * components that are generally untracked by network.
+     *
+     * @param instance, the game instance containing the components
+     * @return a FullSnapshot
+     */
+    fun getFullSnapshot(instance: Instance) : FullSnapshot {
+        val snapshot = FullSnapshot()
+        for (entity in entities) {
+            snapshot.add(instance.getAllComponents(entity))
         }
-        return allProperties
+        return snapshot
     }
 
+    /**
+     * Sends a delta snapshot update to all the clients through the {@link NetworkSynchronizer} interface.
+     * The delta snapshot updates contains:
+     *      - A partial FullSnapshot containing all component data of added entities,
+     *      - A ChangedProperties object containing all the networked properties that changed since the last update.
+     *      - A list of UUID of all the networked entities that where removed.
+     *
+     * @param instance the game instance containing all the components
+     * @param delta the time elapsed since the last delta snapshot
+     */
     override fun updateLogic(instance: Instance, delta: Float) {
+        // read all the components from the added entities and sends them entirely over the network
+        val addedEntitiesComponents = FullSnapshot()
+        for (entity in _addedEntities) {
+            addedEntitiesComponents.add(instance.getAllComponents(entity))
+        }
+        _addedEntities.clear()
+
         // read all the tracked properties and saves them in the change record
-        val loadedProperties = loadProperties(instance)
+        val loadedProperties = loadNetworkedProperties(instance)
         saveProperties(loadedProperties)
 
         // commits the saved changes and get them
         val changedProperties = _changeRecord.commit()
 
         // send the changed properties over the network
-        _synchronizer!!.sendProperties(changedProperties)
+        _synchronizer!!.sendProperties(changedProperties, addedEntitiesComponents, _removedEntities)
+        _removedEntities.clear()
     }
 
     override fun onEntityAdded(entity: Entity) {
+        _addedEntities.add(entity)
         val networkID = UUID.randomUUID()
         _synchronizer!!.setEntityNetworkID(entity, networkID)
         _networkMap[networkID] = entity
@@ -255,6 +286,7 @@ class ServerNetworkSystem : System() {
 
     override fun onEntityRemoved(entity: Entity) {
         val networkID = _synchronizer!!.getEntityNetworkID(entity)
+        _removedEntities.add(networkID!!)
         _synchronizer!!.setEntityNetworkID(entity, null)
         _networkMap.remove(networkID)
     }

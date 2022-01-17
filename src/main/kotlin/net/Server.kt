@@ -6,14 +6,10 @@ import com.esotericsoftware.kryonet.Listener
 import com.esotericsoftware.kryonet.Server
 import com.esotericsoftware.minlog.Log
 import components.DynamicComponent
-import components.NameComponent
 import components.TransformComponent
 import core.*
 import net.packets.*
-import systems.NetworkedProperties
-import systems.MovementSystem
-import systems.NetworkSynchronizer
-import systems.ServerNetworkSystem
+import systems.*
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDateTime
@@ -158,17 +154,24 @@ class ServerSession(
         _networkSystem = _instance.registerSystem<ServerNetworkSystem>() as ServerNetworkSystem
         // network synchronizer implementation for our network system
         val networkSynchronizer = object : NetworkSynchronizer {
-            override fun sendProperties(changes: NetworkedProperties) = sendAllLogged(DeltaSnapshotPacket(_tick.get(), changes))
-            override fun getEntityNetworkID(entity: Entity): UUID? = _instance.getComponent<NetworkComponent>(entity).networkID
+
+            override fun sendProperties(changes: NetworkedProperties,
+                                        addedEntities: FullSnapshot,
+                                        removedEntities: List<UUID>)
+                = sendAllLogged(DeltaSnapshotPacket(_tick.get(), changes, addedEntities, removedEntities))
+
+            override fun getEntityNetworkID(entity: Entity): UUID? =
+                _instance.getComponent<NetworkComponent>(entity).networkID
+
             override fun setEntityNetworkID(entity: Entity, networkID: UUID?) {
                 _instance.getComponent<NetworkComponent>(entity).networkID = networkID
+
             }
         }
         _networkSystem!!.initialize(networkSynchronizer)
         // sets the network system signature. It requires at least a network component and a name component.
         val networkSignature = Signature()
         networkSignature.set(_instance.getComponentType<NetworkComponent>(), true)
-        networkSignature.set(_instance.getComponentType<NameComponent>(), true)
         _instance.setSystemSignature<ServerNetworkSystem>(networkSignature)
 
         _movementSystem = _instance.registerSystem<MovementSystem>() as MovementSystem
