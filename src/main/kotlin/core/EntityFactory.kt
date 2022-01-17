@@ -1,11 +1,12 @@
 package core
 
-import components.NameComponent
-import components.TransformComponent
 import parser.ComponentParser
 import java.beans.XMLDecoder
+import java.beans.XMLEncoder
 import java.io.BufferedInputStream
+import java.io.BufferedOutputStream
 import java.io.FileInputStream
+import java.io.FileOutputStream
 
 
 /**
@@ -25,12 +26,16 @@ object EntityFactory {
         initialized = true
     }
 
-    fun getComponents(name: String) : List<IComponent> {
+    fun saveEntities(path: String, configuration: HashMap<String, String>) {
+        val encoder = XMLEncoder(BufferedOutputStream(FileOutputStream(path)))
+        encoder.writeObject(configuration)
+        encoder.close()
+    }
+
+    fun getComponents(name: String): List<IComponent> {
         assert(initialized)
         val entityPath = entityConfiguration!![name]!!
-        val loadedComponents = ComponentParser.loadComponents(entityPath)
-        loadedComponents.add(NameComponent(name))
-        return loadedComponents
+        return ComponentParser.loadComponents(entityPath)
     }
 
 }

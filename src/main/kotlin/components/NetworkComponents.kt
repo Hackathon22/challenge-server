@@ -1,3 +1,5 @@
+package components
+
 import core.IComponent
 import java.util.*
 import kotlin.collections.ArrayList
