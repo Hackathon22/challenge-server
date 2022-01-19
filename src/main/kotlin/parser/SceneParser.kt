@@ -1,9 +1,8 @@
 package parser
 
-import NetworkComponent
 import components.DynamicComponent
-import components.NameComponent
 import components.TransformComponent
+import components.NetworkComponent
 import core.Entity
 import core.IComponent
 import java.beans.XMLDecoder
@@ -54,7 +53,6 @@ internal fun convertComponentsToSerializable(components: List<IComponent>) : Arr
     components.forEach { component ->
         when (component) {
             is NetworkComponent -> convertedComponents.add(parseSerializableNetworkComponent((component)))
-            is NameComponent -> return@forEach  // remove NameComponent
             else -> convertedComponents.add(component)
         }
     }

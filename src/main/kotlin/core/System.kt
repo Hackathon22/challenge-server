@@ -1,13 +1,7 @@
 package core
 
-import java.util.*
-import kotlin.collections.HashMap
-import kotlin.collections.LinkedHashSet
-import kotlin.math.sign
-import kotlin.math.sin
 import kotlin.reflect.KClass
 import kotlin.reflect.full.createInstance
-import kotlin.reflect.full.createType
 
 abstract class System {
     // set containing unique values, with an importance in order

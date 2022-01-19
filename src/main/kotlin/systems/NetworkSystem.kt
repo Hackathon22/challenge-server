@@ -1,10 +1,8 @@
 package systems
 
-import NetworkComponent
+import components.NetworkComponent
 import core.*
 import java.util.*
-import kotlin.collections.ArrayList
-import kotlin.collections.HashMap
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 

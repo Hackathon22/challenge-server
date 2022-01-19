@@ -1,7 +1,5 @@
 package core
 
-import java.lang.RuntimeException
-
 operator fun Number.minus(other: Number): Number {
     return when (this) {
         is Long -> this.toLong() - other.toLong()

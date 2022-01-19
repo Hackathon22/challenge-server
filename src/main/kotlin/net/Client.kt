@@ -5,6 +5,7 @@ import com.esotericsoftware.kryonet.Connection
 import com.esotericsoftware.kryonet.Listener
 import core.Instance
 import net.packets.*
+import systems.HUDSystem
 import java.util.concurrent.atomic.AtomicBoolean
 
 const val DEFAULT_TIMEOUT = 10000
@@ -20,6 +21,12 @@ open class ClientSession(val tcpPort: Int = DEFAULT_PORT_TCP, val udpPort: Int =
     private val _running = AtomicBoolean(false)
 
     private val _instance = Instance()
+
+    private val _windowSystem = HUDSystem()
+
+    init {
+        _windowSystem.initialize(1200, 800)
+    }
 
     fun connect(address: String, username: String, password: String) {
         _username = username
@@ -56,7 +63,8 @@ open class ClientSession(val tcpPort: Int = DEFAULT_PORT_TCP, val udpPort: Int =
     }
 
     fun run() {
-
+        _windowSystem.start()
+        _windowSystem.update(_instance, 0.0f)
     }
 
 
@@ -84,4 +92,9 @@ open class ClientSession(val tcpPort: Int = DEFAULT_PORT_TCP, val udpPort: Int =
     }
 
     fun isConnected() = (_status == ClientStatus.CONNECTED)
+}
+
+fun main() {
+    val client = ClientSession()
+    client.run()
 }

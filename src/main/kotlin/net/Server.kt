@@ -1,11 +1,11 @@
 package net
 
-import NetworkComponent
 import com.esotericsoftware.kryonet.Connection
 import com.esotericsoftware.kryonet.Listener
 import com.esotericsoftware.kryonet.Server
 import com.esotericsoftware.minlog.Log
 import components.DynamicComponent
+import components.NetworkComponent
 import components.TransformComponent
 import core.*
 import net.packets.*
@@ -20,7 +20,6 @@ import java.util.logging.Handler
 import java.util.logging.Level
 import java.util.logging.LogRecord
 import java.util.logging.Logger
-import kotlin.collections.HashMap
 
 
 const val DEFAULT_PORT_TCP = 2049
