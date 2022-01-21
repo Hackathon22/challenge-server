@@ -6,16 +6,25 @@ import core.System
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.glfw.GLFWErrorCallback
 import org.lwjgl.opengl.GL
-import org.lwjgl.opengl.GL11.*
+import org.lwjgl.opengl.GL20.*
 import org.lwjgl.system.MemoryStack.stackPush
 import org.lwjgl.system.MemoryUtil.NULL
+import renderGL.Mesh
+import renderGL.Shader
+import renderGL.ShaderProgram
 
-class HUDSystem : System() {
+class WindowSystemGL : System() {
 
     private var _width = 0
     private var _height = 0
 
     private var _window = 0L
+
+    private var _triangleData = floatArrayOf(
+        -0.5f, -0.5f, 0.0f,
+        0.5f, -0.5f, 0.0f,
+        0.0f, 0.5f, 0.0f
+    )
 
     override fun onEntityAdded(entity: Entity) {}
 
@@ -39,7 +48,7 @@ class HUDSystem : System() {
 
     override fun updateLogic(instance: Instance, delta: Float) {
         GL.createCapabilities()
-        glClearColor(1.0f, 0.0f, 0.0f, 0.0f)
+        glClearColor(0.0f, 0.0f, 0.0f, 0.0f)
         while (!glfwWindowShouldClose(_window)) {
             glClear(GL_COLOR_BUFFER_BIT.or(GL_DEPTH_BUFFER_BIT))
             glfwSwapBuffers(_window)
@@ -71,6 +80,27 @@ class HUDSystem : System() {
         val stack = stackPush()
         val pWidth = stack.mallocInt(1)
         val pHeight = stack.mallocInt(1)
+
+        // starts a triangle mesh
+        val triangleMesh = Mesh()
+        triangleMesh.initialize(_triangleData)
+
+        // starts the vertex and fragment shaders
+        val vertexShader = Shader()
+        vertexShader.initialize("src/main/resources/shaders/vertex_shader_1.glsl", true)
+        assert(vertexShader.initialized)
+
+        val fragmentShader = Shader()
+        fragmentShader.initialize("src/main/resources/shaders/frag_shader_1.glsl", true)
+        assert(fragmentShader.initialized)
+
+        // starts the program from the two loaded shaders, links it and uses it
+        val shaderProgram = ShaderProgram()
+        shaderProgram.addShader(vertexShader)
+        shaderProgram.addShader(fragmentShader)
+        shaderProgram.link(true)
+        assert(shaderProgram.linked)
+        shaderProgram.use()
 
         // get the window size
         glfwGetWindowSize(_window, pWidth, pHeight)

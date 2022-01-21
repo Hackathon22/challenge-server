@@ -5,7 +5,7 @@ import com.esotericsoftware.kryonet.Connection
 import com.esotericsoftware.kryonet.Listener
 import core.Instance
 import net.packets.*
-import systems.HUDSystem
+import systems.WindowSystemGL
 import java.util.concurrent.atomic.AtomicBoolean
 
 const val DEFAULT_TIMEOUT = 10000
@@ -22,7 +22,7 @@ open class ClientSession(val tcpPort: Int = DEFAULT_PORT_TCP, val udpPort: Int =
 
     private val _instance = Instance()
 
-    private val _windowSystem = HUDSystem()
+    private val _windowSystem = WindowSystemGL()
 
     init {
         _windowSystem.initialize(1200, 800)
