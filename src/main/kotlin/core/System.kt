@@ -3,11 +3,11 @@ package core
 import kotlin.reflect.KClass
 import kotlin.reflect.full.createInstance
 
-abstract class System {
+abstract class System(override val observers: ArrayList<IObserver> = ArrayList()) : IObserver, IObservable {
     // set containing unique values, with an importance in order
     protected var entities = LinkedHashSet<Entity>()
 
-    private var _initialized = false
+    protected var _initialized = false
 
     fun update(instance: Instance, delta: Float) {
         assert(_initialized)
@@ -37,6 +37,9 @@ abstract class System {
         onEntityRemoved(entity)
     }
 
+    override fun onEvent(event: Event, observable: IObservable) {
+        // Does nothing by default, needs to be overwritten
+    }
 }
 
 class SystemManager {
@@ -54,6 +57,11 @@ class SystemManager {
     internal inline fun <reified T : System> setSignature(signature: Signature) {
         assert(_systemMap[T::class] != null)
         _signatureMap[T::class] = signature
+    }
+
+    internal inline fun <reified T: System> getSystem() : T {
+        assert(_systemMap[T::class] == null)
+        return (_systemMap[T::class] as T?)!!
     }
 
     fun entityDestroyed(entity: Entity) {

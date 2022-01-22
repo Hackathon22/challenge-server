@@ -1,16 +1,23 @@
 package net
 
+import com.badlogic.gdx.ApplicationAdapter
+import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.backends.lwjgl.LwjglApplication
+import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration
 import com.esotericsoftware.kryonet.Client
 import com.esotericsoftware.kryonet.Connection
 import com.esotericsoftware.kryonet.Listener
 import core.Instance
 import net.packets.*
-import systems.WindowSystemGL
+import systems.CameraSystem
+import systems.SpriteRenderSystem
+import systems.WindowSystem
 import java.util.concurrent.atomic.AtomicBoolean
 
 const val DEFAULT_TIMEOUT = 10000
 
-open class ClientSession(val tcpPort: Int = DEFAULT_PORT_TCP, val udpPort: Int = DEFAULT_PORT_UDP) {
+open class ClientSession(val tcpPort: Int = DEFAULT_PORT_TCP,
+                         val udpPort: Int = DEFAULT_PORT_UDP) : ApplicationAdapter() {
 
     private val _client = Client()
 
@@ -22,11 +29,11 @@ open class ClientSession(val tcpPort: Int = DEFAULT_PORT_TCP, val udpPort: Int =
 
     private val _instance = Instance()
 
-    private val _windowSystem = WindowSystemGL()
+    private val _windowSystem = WindowSystem()
 
-    init {
-        _windowSystem.initialize(1200, 800)
-    }
+    private val _cameraSystem = CameraSystem()
+
+    private val _spriteSystem = SpriteRenderSystem()
 
     fun connect(address: String, username: String, password: String) {
         _username = username
@@ -56,17 +63,10 @@ open class ClientSession(val tcpPort: Int = DEFAULT_PORT_TCP, val udpPort: Int =
         _client.sendTCP(LoginPacket(username, password))
     }
 
-
     fun disconnect() {
         _client.close()
         _status = ClientStatus.DISCONNECTED
     }
-
-    fun run() {
-        _windowSystem.start()
-        _windowSystem.update(_instance, 0.0f)
-    }
-
 
     private fun handleLoginResponse(packet: LoginResponsePacket) {
         if (packet.success) {
@@ -92,9 +92,36 @@ open class ClientSession(val tcpPort: Int = DEFAULT_PORT_TCP, val udpPort: Int =
     }
 
     fun isConnected() = (_status == ClientStatus.CONNECTED)
+
+    override fun create() {
+        println("Created")
+        val windowWidth = 1200
+        val windowHeight = 800
+
+        // initializes systems
+        _windowSystem.initialize(windowWidth, windowHeight)
+        _cameraSystem.initialize(windowWidth, windowHeight)
+        _spriteSystem.initialize()
+
+        // sets observers
+        _windowSystem.addObserver(_cameraSystem)
+    }
+
+    override fun render() {
+        val deltaTime = Gdx.graphics.deltaTime
+        _windowSystem.update(_instance, deltaTime)
+        _cameraSystem.update(_instance, deltaTime)
+        _spriteSystem.update(_instance, deltaTime)
+    }
 }
 
 fun main() {
-    val client = ClientSession()
-    client.run()
+    val applicationConfiguration = LwjglApplicationConfiguration()
+    applicationConfiguration.title = "ARSWA - Client"
+    applicationConfiguration.width = 1200
+    applicationConfiguration.height = 800
+
+    val clientSession = ClientSession()
+
+    LwjglApplication(clientSession, applicationConfiguration)
 }

@@ -104,4 +104,8 @@ class Instance {
         }
     }
 
+    internal inline fun <reified T: System> getSystem() : T {
+        return _systemManager.getSystem()
+    }
+
 }

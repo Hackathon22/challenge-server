@@ -1,15 +1,15 @@
 package components
 
 import core.IComponent
-import core.Vec3
+import core.Vec3F
 
-data class TransformComponent(var pos: Vec3 = Vec3(0.0f, 0.0f, 0.0f),
-                              var rot: Vec3 = Vec3(0.0f, 0.0f, 0.0f),
-                              var scale: Vec3 = Vec3(1.0f, 1.0f, 1.0f)
+data class TransformComponent(var pos: Vec3F = Vec3F(0.0f, 0.0f, 0.0f),
+                              var rot: Vec3F = Vec3F(0.0f, 0.0f, 0.0f),
+                              var scale: Vec3F = Vec3F(1.0f, 1.0f, 1.0f)
 ) : IComponent
 
-data class DynamicComponent(var speed: Vec3 = Vec3(0.0f, 0.0f, 0.0f),
-                            var acceleration: Vec3 = Vec3(0.0f, 0.0f, 0.0f)
+data class DynamicComponent(var speed: Vec3F = Vec3F(0.0f, 0.0f, 0.0f),
+                            var acceleration: Vec3F = Vec3F(0.0f, 0.0f, 0.0f)
 ) : IComponent
 
 

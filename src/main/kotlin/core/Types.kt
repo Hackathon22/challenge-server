@@ -1,116 +1,54 @@
 package core
 
-operator fun Number.minus(other: Number): Number {
-    return when (this) {
-        is Long -> this.toLong() - other.toLong()
-        is Int -> this.toInt() - other.toInt()
-        is Short -> this.toShort() - other.toShort()
-        is Byte -> this.toByte() - other.toByte()
-        is Double -> this.toDouble() - other.toDouble()
-        is Float -> this.toFloat() - other.toFloat()
-        else -> throw RuntimeException("Unknown numeric type in minus operation")
-    }
+data class Vec2I(var x: Int, var y: Int) {
+
+    operator fun plus(vec: Vec2I) = Vec2I(x + vec.x, y + vec.y)
+
+    operator fun minus(vec: Vec2I) = Vec2I(x - vec.x, y - vec.y)
+
+    operator fun div(vec: Vec2I) = Vec2I(x / vec.x, y / vec.y)
+
+    operator fun times(vec: Vec2I) = Vec2I(x * vec.x, y * vec.y)
+
+    operator fun times(scalar: Float) = Vec2I((x * scalar).toInt(), (y * scalar).toInt())
 }
 
-operator fun Number.plus(other: Number): Number {
-    return when (this) {
-        is Long -> this.toLong() + other.toLong()
-        is Int -> this.toInt() + other.toInt()
-        is Short -> this.toShort() + other.toShort()
-        is Byte -> this.toByte() + other.toByte()
-        is Double -> this.toDouble() + other.toDouble()
-        is Float -> this.toFloat() + other.toFloat()
-        else -> throw RuntimeException("Unknown numeric type in minus operation")
-    }
+data class Vec2F(var x: Float, var y: Float) {
+
+    operator fun plus(vec: Vec2F) = Vec2F(x + vec.x, y + vec.y)
+
+    operator fun minus(vec: Vec2F) = Vec2F(x - vec.x, y - vec.y)
+
+    operator fun div(vec: Vec2F) = Vec2F(x / vec.x, y / vec.y)
+
+    operator fun times(vec: Vec2F) = Vec2F(x * vec.x, y * vec.y)
+
+    operator fun times(scalar: Float) = Vec2F(x * scalar, y * scalar)
 }
 
-operator fun Number.times(other: Number): Number {
-    return when (this) {
-        is Long -> this.toLong() * other.toLong()
-        is Int -> this.toInt() * other.toInt()
-        is Short -> this.toShort() * other.toShort()
-        is Byte -> this.toByte() * other.toByte()
-        is Double -> this.toDouble() * other.toDouble()
-        is Float -> this.toFloat() * other.toFloat()
-        else -> throw RuntimeException("Unknown numeric type in minus operation")
-    }
+data class Vec3I(var x: Int, var y: Int, var z: Int) {
+
+    operator fun plus(vec: Vec3I) = Vec3I(x + vec.x, y + vec.y, z + vec.z)
+
+    operator fun minus(vec: Vec3I) =  Vec3I(x - vec.x, y - vec.y, z - vec.z)
+
+    operator fun div(vec: Vec3I) = Vec3I(x / vec.x, y / vec.y, z / vec.z)
+
+    operator fun times(vec: Vec3I) = Vec3I(x * vec.x, y * vec.y, z * vec.z)
+
+    operator fun times(scalar: Float) = Vec3I((x * scalar).toInt(), (y * scalar).toInt(), (z * scalar).toInt())
+
 }
 
-operator fun Number.div(other: Number): Number {
-    return when (this) {
-        is Long -> this.toLong() / other.toLong()
-        is Int -> this.toInt() / other.toInt()
-        is Short -> this.toShort() / other.toShort()
-        is Byte -> this.toByte() / other.toByte()
-        is Double -> this.toDouble() / other.toDouble()
-        is Float -> this.toFloat() / other.toFloat()
-        else -> throw RuntimeException("Unknown numeric type in minus operation")
-    }
-}
+data class Vec3F(var x: Float, var y: Float, var z: Float) {
 
+    operator fun plus(vec: Vec3F) = Vec3F(x + vec.x, y + vec.y, z + vec.z)
 
-data class Vec2(var x: Number, var y: Number) {
+    operator fun minus(vec: Vec3F) = Vec3F(x - vec.x, y - vec.y, z - vec.z)
 
-    init {
-        assert(x::class == y::class)
-    }
+    operator fun div(vec: Vec3F) = Vec3F(x / vec.x, y / vec.y, z / vec.z)
 
-    operator fun plus(vec: Vec2): Vec2 {
-        assert(x::class == vec.x::class)
-        return Vec2(x + vec.x, y + vec.y)
-    }
+    operator fun times(vec: Vec3F) = Vec3F(x * vec.x, y * vec.y, y * vec.y)
 
-    operator fun minus(vec: Vec2): Vec2 {
-        assert(x::class == vec.x::class)
-        return Vec2(x - vec.x, y - vec.y)
-    }
-
-    operator fun div(vec: Vec2): Vec2 {
-        assert(x::class == vec.x::class)
-        return Vec2(x / vec.x, y / vec.y)
-    }
-
-    operator fun times(vec: Vec2): Vec2 {
-        assert(x::class == vec.x::class)
-        return Vec2(x * vec.x, y * vec.y)
-    }
-
-    override fun toString(): String {
-        return "Vec2{x=$x, y=$y}"
-    }
-}
-
-data class Vec3(var x: Number, var y: Number, var z: Number) {
-
-    init {
-        assert(x::class == y::class && y::class == z::class)
-    }
-
-    operator fun plus(vec: Vec3): Vec3 {
-        assert(x::class == vec.x::class)
-        return Vec3(x + vec.x, y + vec.y, z + vec.z)
-    }
-
-    operator fun minus(vec: Vec3): Vec3 {
-        assert(x::class == vec.x::class)
-        return Vec3(x - vec.x, y - vec.y, z - vec.z)
-    }
-
-    operator fun times(vec: Vec3): Vec3 {
-        assert(x::class == vec.x::class)
-        return Vec3(x * vec.x, y * vec.y, z * vec.z)
-    }
-
-    operator fun times(scalar: Number): Vec3 {
-        return Vec3(x * scalar, y * scalar, z * scalar)
-    }
-
-    operator fun div(vec: Vec3): Vec3 {
-        assert(x::class == vec.x::class)
-        return Vec3(x / vec.x, y / vec.y, z / vec.z)
-    }
-
-    override fun toString(): String {
-        return "Vec3{x=$x, y=$y, z=$z}"
-    }
+    operator fun times(scalar: Float) = Vec3F(x * scalar, y * scalar, z * scalar)
 }

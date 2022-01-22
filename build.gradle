@@ -20,17 +20,9 @@ dependencies {
     implementation "org.junit.jupiter:junit-jupiter:5.7.0"
     implementation "com.esotericsoftware:kryonet:2.22.0-RC1"
     implementation "org.jetbrains.kotlin:kotlin-noarg:1.4.10"
-    implementation "org.lwjgl:lwjgl:3.2.1"
-    implementation "org.lwjgl:lwjgl-glfw:3.2.1"
-    implementation "org.lwjgl:lwjgl-opengl:3.2.1"
-    implementation "org.lwjgl:lwjgl-stb:3.2.1"
-    implementation "org.lwjgl:lwjgl:3.2.1:natives-macos"
-    implementation "org.lwjgl:lwjgl-glfw:3.2.1:natives-macos"
-    implementation "org.lwjgl:lwjgl-opengl:3.2.1:natives-macos"
-    implementation "org.lwjgl:lwjgl-stb:3.2.1:natives-macos"
-//    implementation "org.lwjgl:lwjgl-glfw:3.1.2-SNAPSHOT"
-//    implementation "org.lwjgl:lwjgl-opengl:3.1.2-SNAPSHOT"
-//    implementation "org.lwjgl:lwjgl-stb:3.1.2-SNAPSHOT"
+    implementation "com.badlogicgames.gdx:gdx:1.10.0"
+    implementation "com.badlogicgames.gdx:gdx-backend-lwjgl:1.10.0"
+    implementation "com.badlogicgames.gdx:gdx-platform:1.10.0:natives-desktop"
 }
 
 test {

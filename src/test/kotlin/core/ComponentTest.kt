@@ -33,9 +33,9 @@ internal class ComponentTest {
 
         val entity = entityManager.createEntity()
         val component = TransformComponent()
-        component.pos.x = 1.0
-        component.rot.y = 2.0
-        component.scale.z = 3.0
+        component.pos.x = 1.0f
+        component.rot.y = 2.0f
+        component.scale.z = 3.0f
 
         componentManager.registerComponent<TransformComponent>()
         componentManager.addComponent(entity, component)
