@@ -10,9 +10,7 @@ import core.*
 import net.packets.*
 import parser.SceneParser
 import render.SpriteRegister
-import systems.CameraSystem
-import systems.MovementSystem
-import systems.SpriteRenderSystem
+import systems.*
 import java.util.concurrent.atomic.AtomicBoolean
 
 const val DEFAULT_TIMEOUT = 10000
@@ -40,6 +38,10 @@ open class ClientSession(private val scenePath : String? = "src/main/resources/s
 
     private val _spriteSystem : System = _instance.registerSystem<SpriteRenderSystem>()
 
+    private val _inputSystem : System = _instance.registerSystem<InputSystem>()
+
+    private val _stateSystem : System = _instance.registerSystem<StateSystem>()
+
     override val observers = ArrayList<IObserver>()
 
     init {
@@ -49,6 +51,8 @@ open class ClientSession(private val scenePath : String? = "src/main/resources/s
         _instance.registerComponent<DynamicComponent>()
         _instance.registerComponent<CameraComponent>()
         _instance.registerComponent<SpriteComponent>()
+        _instance.registerComponent<CommandComponent>()
+        _instance.registerComponent<StateComponent>()
 
         // initializes non-graphical systems
         _movementSystem.initialize()
@@ -56,6 +60,14 @@ open class ClientSession(private val scenePath : String? = "src/main/resources/s
         movementSignature.set(_instance.getComponentType<TransformComponent>(), true)
         movementSignature.set(_instance.getComponentType<DynamicComponent>(), true)
         _instance.setSystemSignature<MovementSystem>(movementSignature)
+
+        _stateSystem.initialize()
+        val stateSignature = Signature()
+        stateSignature.set(_instance.getComponentType<CommandComponent>(), true)
+        stateSignature.set(_instance.getComponentType<StateComponent>(), true)
+        stateSignature.set(_instance.getComponentType<TransformComponent>(), true)
+        stateSignature.set(_instance.getComponentType<DynamicComponent>(), true)
+        _instance.setSystemSignature<StateSystem>(stateSignature)
 
         // sets observers on non-graphical systems
 
@@ -121,6 +133,12 @@ open class ClientSession(private val scenePath : String? = "src/main/resources/s
         // Loads all the game sprites
         SpriteRegister.initialize()
 
+        // initializes input systems
+        _inputSystem.initialize()
+        val inputSignature = Signature()
+        inputSignature.set(_instance.getComponentType<CommandComponent>(), true)
+        _instance.setSystemSignature<InputSystem>(inputSignature)
+
         // initializes graphical systems
         _cameraSystem.initialize(BASE_WIDTH, BASE_HEIGHT)
         val cameraSignature = Signature()
@@ -161,7 +179,6 @@ open class ClientSession(private val scenePath : String? = "src/main/resources/s
 
     override fun render() {
         val deltaTime = Gdx.graphics.deltaTime
-        println(deltaTime)
         // physic systems
         _movementSystem.update(_instance, deltaTime)
 

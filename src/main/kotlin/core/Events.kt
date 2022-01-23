@@ -1,7 +1,7 @@
 package core
 
 enum class EventType {
-    VALUE_CHANGED
+    VALUE_CHANGED,
 }
 
 abstract class Event {

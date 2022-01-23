@@ -14,10 +14,6 @@ class TestSnapshotUpdate {
 
         val client = object : ClientSession() {
 
-            override fun handleDeltaSnapshot(packet: DeltaSnapshotPacket) {
-                receivedDeltaSnapshot = true
-            }
-
         }
         server.start()
 
