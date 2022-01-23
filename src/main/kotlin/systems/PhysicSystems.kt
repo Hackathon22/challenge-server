@@ -19,6 +19,7 @@ class MovementSystem : System() {
 
             // acceleration modifies speed
             dynamicComponent.speed += dynamicComponent.acceleration * delta
+            dynamicComponent.speed.y += dynamicComponent.gravity * delta
             // speed modifies position
             transformComponent.pos += dynamicComponent.speed * delta
         }

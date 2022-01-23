@@ -161,6 +161,11 @@ open class ClientSession(private val scenePath : String? = "src/main/resources/s
 
     override fun render() {
         val deltaTime = Gdx.graphics.deltaTime
+        println(deltaTime)
+        // physic systems
+        _movementSystem.update(_instance, deltaTime)
+
+        // render systems
         _cameraSystem.update(_instance, deltaTime)
         _spriteSystem.update(_instance, deltaTime)
     }

@@ -107,13 +107,12 @@ fun main() {
     val cameraEntity = instance.createEntity()
     val cameraCameraComponent = CameraComponent()
     val cameraTransformComponent = TransformComponent()
-    cameraTransformComponent.pos.z = -1.0f
 
     scene[cameraEntity] = arrayListOf(cameraCameraComponent, cameraTransformComponent)
 
     val simpleEntity = instance.createEntity()
     val simpleTransformComponent = TransformComponent()
-    simpleTransformComponent.pos.x = -1.0f
+    simpleTransformComponent.pos.x = -106.0f
     val simpleSpriteComponent = SpriteComponent()
     simpleSpriteComponent.sprite
 
@@ -121,12 +120,20 @@ fun main() {
 
     val simpleEntity2 = instance.createEntity()
     val simpleTransformComponent2 = TransformComponent()
-    simpleTransformComponent2.pos.x = 1.0f
+    simpleTransformComponent2.pos.x = 42.0f
     val simpleSpriteComponent2 = SpriteComponent("invalid")
     simpleSpriteComponent2.sprite = "error"
 
-
     scene[simpleEntity2] = arrayListOf(simpleTransformComponent2, simpleSpriteComponent2)
+
+    val dynamicEntity = instance.createEntity()
+    val dynamicDynamicComponent = DynamicComponent()
+    dynamicDynamicComponent.speed.y = 200.0f
+    val dynamicTransformComponent = TransformComponent()
+    dynamicTransformComponent.pos.x = -32.0f
+    val dynamicSpriteComponent = SpriteComponent()
+
+    scene[dynamicEntity] = arrayListOf(dynamicTransformComponent, dynamicDynamicComponent, dynamicSpriteComponent)
 
     XMLObjectWriter.writeObject("src/main/resources/scenes/base_scene.xml", scene)
 }

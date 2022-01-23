@@ -8,16 +8,7 @@
      <object class="components.CameraComponent"/>
     </void>
     <void method="add">
-     <object class="components.TransformComponent" id="TransformComponent0">
-      <void property="pos">
-       <void property="z">
-        <float>0.0</float>
-       </void>
-       <void property="x">
-        <float>0.0</float>
-       </void>
-      </void>
-     </object>
+     <object class="components.TransformComponent"/>
     </void>
    </object>
   </void>
@@ -25,10 +16,10 @@
    <int>1</int>
    <object class="java.util.ArrayList">
     <void method="add">
-     <object class="components.TransformComponent" id="TransformComponent1">
+     <object class="components.TransformComponent" id="TransformComponent0">
       <void property="pos">
        <void property="x">
-        <float>-64.0</float>
+        <float>-106.0</float>
        </void>
       </void>
      </object>
@@ -42,10 +33,10 @@
    <int>2</int>
    <object class="java.util.ArrayList">
     <void method="add">
-     <object class="components.TransformComponent" id="TransformComponent2">
+     <object class="components.TransformComponent" id="TransformComponent1">
       <void property="pos">
        <void property="x">
-        <float>64.0</float>
+        <float>42.0</float>
        </void>
       </void>
      </object>
@@ -56,6 +47,32 @@
        <string>error</string>
       </void>
      </object>
+    </void>
+   </object>
+  </void>
+  <void method="put">
+   <int>3</int>
+   <object class="java.util.ArrayList">
+    <void method="add">
+     <object class="components.TransformComponent" id="TransformComponent2">
+      <void property="pos">
+       <void property="x">
+        <float>-32.0</float>
+       </void>
+      </void>
+     </object>
+    </void>
+    <void method="add">
+     <object class="components.DynamicComponent" id="DynamicComponent0">
+      <void property="speed">
+       <void property="y">
+        <float>200.0</float>
+       </void>
+      </void>
+     </object>
+    </void>
+    <void method="add">
+     <object class="components.SpriteComponent"/>
     </void>
    </object>
   </void>
