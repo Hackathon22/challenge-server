@@ -4,10 +4,12 @@ import com.badlogic.gdx.ApplicationAdapter
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.backends.lwjgl.LwjglApplication
 import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration
+import com.badlogic.gdx.graphics.Camera
 import com.esotericsoftware.kryonet.Client
 import com.esotericsoftware.kryonet.Connection
 import com.esotericsoftware.kryonet.Listener
 import core.Instance
+import core.System
 import net.packets.*
 import systems.CameraSystem
 import systems.SpriteRenderSystem
@@ -15,6 +17,9 @@ import systems.WindowSystem
 import java.util.concurrent.atomic.AtomicBoolean
 
 const val DEFAULT_TIMEOUT = 10000
+
+const val BASE_WIDTH = 1200
+const val BASE_HEIGHT = 800
 
 open class ClientSession(val tcpPort: Int = DEFAULT_PORT_TCP,
                          val udpPort: Int = DEFAULT_PORT_UDP) : ApplicationAdapter() {
@@ -29,11 +34,17 @@ open class ClientSession(val tcpPort: Int = DEFAULT_PORT_TCP,
 
     private val _instance = Instance()
 
-    private val _windowSystem = WindowSystem()
+    private var _windowSystem : System
 
-    private val _cameraSystem = CameraSystem()
+    private var _cameraSystem : System
 
-    private val _spriteSystem = SpriteRenderSystem()
+    private var _spriteSystem : System
+
+    init {
+        _windowSystem = _instance.registerSystem<WindowSystem>()
+        _cameraSystem = _instance.registerSystem<CameraSystem>()
+        _spriteSystem = _instance.registerSystem<SpriteRenderSystem>()
+    }
 
     fun connect(address: String, username: String, password: String) {
         _username = username
@@ -95,12 +106,10 @@ open class ClientSession(val tcpPort: Int = DEFAULT_PORT_TCP,
 
     override fun create() {
         println("Created")
-        val windowWidth = 1200
-        val windowHeight = 800
 
         // initializes systems
-        _windowSystem.initialize(windowWidth, windowHeight)
-        _cameraSystem.initialize(windowWidth, windowHeight)
+        _windowSystem.initialize(BASE_WIDTH, BASE_HEIGHT)
+        _cameraSystem.initialize(BASE_WIDTH, BASE_HEIGHT)
         _spriteSystem.initialize()
 
         // sets observers
@@ -113,15 +122,4 @@ open class ClientSession(val tcpPort: Int = DEFAULT_PORT_TCP,
         _cameraSystem.update(_instance, deltaTime)
         _spriteSystem.update(_instance, deltaTime)
     }
-}
-
-fun main() {
-    val applicationConfiguration = LwjglApplicationConfiguration()
-    applicationConfiguration.title = "ARSWA - Client"
-    applicationConfiguration.width = 1200
-    applicationConfiguration.height = 800
-
-    val clientSession = ClientSession()
-
-    LwjglApplication(clientSession, applicationConfiguration)
 }
