@@ -5,12 +5,6 @@ import components.TransformComponent
 import components.NetworkComponent
 import core.Entity
 import core.IComponent
-import java.beans.XMLDecoder
-import java.beans.XMLEncoder
-import java.io.BufferedInputStream
-import java.io.BufferedOutputStream
-import java.io.FileInputStream
-import java.io.FileOutputStream
 
 typealias Scene = HashMap<Entity, ArrayList<IComponent>>
 
@@ -82,8 +76,7 @@ object SceneParser {
      * @param path the directory path to the xml file describing the scene.
      */
     fun loadScene(path: String): Scene {
-        val xmlDecoder = XMLDecoder(BufferedInputStream(FileInputStream(path)))
-        val components = xmlDecoder.readObject() as Scene
+        val components = XMLObjectReader.readObject<Scene>(path)
 
         // replace SerializableNetworkComponents as NetworkComponent
         components.forEach { (entity, comp) ->
@@ -97,15 +90,11 @@ object SceneParser {
      * Saves a scene to a XML file, adding persistence.
      */
     fun saveScene(components: Scene, path: String) {
-        // replace NetworkComponent as SerializableNetworkComponents
-        val xmlEncoder = XMLEncoder(BufferedOutputStream(FileOutputStream(path)))
-
         val componentCopy = Scene()
         components.forEach { (entity, comp) ->
             components[entity] = convertComponentsToSerializable(comp)
         }
 
-        xmlEncoder.writeObject(componentCopy)
-        xmlEncoder.close()
+        XMLObjectWriter.writeObject(path, componentCopy)
     }
 }

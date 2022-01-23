@@ -2,15 +2,13 @@ package net
 
 import com.badlogic.gdx.ApplicationAdapter
 import com.badlogic.gdx.Gdx
-import com.badlogic.gdx.backends.lwjgl.LwjglApplication
-import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration
-import com.badlogic.gdx.graphics.Camera
 import com.esotericsoftware.kryonet.Client
 import com.esotericsoftware.kryonet.Connection
 import com.esotericsoftware.kryonet.Listener
 import core.Instance
 import core.System
 import net.packets.*
+import render.SpriteManager
 import systems.CameraSystem
 import systems.SpriteRenderSystem
 import systems.WindowSystem
@@ -109,7 +107,8 @@ open class ClientSession(val tcpPort: Int = DEFAULT_PORT_TCP,
     fun isConnected() = (_status == ClientStatus.CONNECTED)
 
     override fun create() {
-        
+        // Loads all the game sprites
+        SpriteManager.initialize()
     }
 
     override fun render() {
