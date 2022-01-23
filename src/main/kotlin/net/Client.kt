@@ -5,13 +5,11 @@ import com.badlogic.gdx.Gdx
 import com.esotericsoftware.kryonet.Client
 import com.esotericsoftware.kryonet.Connection
 import com.esotericsoftware.kryonet.Listener
-import core.Instance
-import core.System
+import core.*
 import net.packets.*
 import render.SpriteRegister
 import systems.CameraSystem
 import systems.SpriteRenderSystem
-import systems.WindowSystem
 import java.util.concurrent.atomic.AtomicBoolean
 
 const val DEFAULT_TIMEOUT = 10000
@@ -20,7 +18,7 @@ const val BASE_WIDTH = 1200
 const val BASE_HEIGHT = 800
 
 open class ClientSession(val tcpPort: Int = DEFAULT_PORT_TCP,
-                         val udpPort: Int = DEFAULT_PORT_UDP) : ApplicationAdapter() {
+                         val udpPort: Int = DEFAULT_PORT_UDP) : ApplicationAdapter(), IObservable {
 
     private val _client = Client()
 
@@ -32,20 +30,16 @@ open class ClientSession(val tcpPort: Int = DEFAULT_PORT_TCP,
 
     private val _instance = Instance()
 
-    private var _windowSystem : System = _instance.registerSystem<WindowSystem>()
-
     private var _cameraSystem : System = _instance.registerSystem<CameraSystem>()
 
     private var _spriteSystem : System = _instance.registerSystem<SpriteRenderSystem>()
 
-    init {
-        // initializes systems
-        _windowSystem.initialize(BASE_WIDTH, BASE_HEIGHT)
-        _cameraSystem.initialize(BASE_WIDTH, BASE_HEIGHT)
-        _spriteSystem.initialize()
+    override val observers = ArrayList<IObserver>()
 
-        // sets observers
-        _windowSystem.addObserver(_cameraSystem)
+    init {
+        // initializes non-graphical systems
+
+        // sets observers on non-graphical systems
     }
 
     fun connect(address: String, username: String, password: String) {
@@ -109,11 +103,28 @@ open class ClientSession(val tcpPort: Int = DEFAULT_PORT_TCP,
     override fun create() {
         // Loads all the game sprites
         SpriteRegister.initialize()
+
+        // initializes graphical systems
+        _cameraSystem.initialize(BASE_WIDTH, BASE_HEIGHT)
+        _spriteSystem.initialize()
+
+        // set observers on graphical systems
+        this.addObserver(_cameraSystem)
+
+        _running.set(true)
+    }
+
+    override fun dispose() {
+        _running.set(false)
+    }
+
+    override fun resize(width: Int, height: Int) {
+        println("Resized window ($width, $height)")
+        notifyObservers(WindowResizeEvent(Vec2F(width.toFloat(), height.toFloat())))
     }
 
     override fun render() {
         val deltaTime = Gdx.graphics.deltaTime
-        _windowSystem.update(_instance, deltaTime)
         _cameraSystem.update(_instance, deltaTime)
         _spriteSystem.update(_instance, deltaTime)
     }

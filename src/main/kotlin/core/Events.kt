@@ -8,11 +8,13 @@ abstract class Event {
     abstract fun getEventType() : EventType
 }
 
-data class ValueChangedEvent(val valueName: String, val value: Any) : Event() {
+abstract class ValueChangedEvent(val valueName: String, val value: Any) : Event() {
     override fun getEventType(): EventType {
         return EventType.VALUE_CHANGED
     }
 }
+
+data class WindowResizeEvent(val newSize: Vec2F) : ValueChangedEvent("windowSize", newSize)
 
 interface IObserver {
     fun onEvent(event: Event, observable: IObservable)

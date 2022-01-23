@@ -44,3 +44,4 @@ gradle-app.setting
 
 .idea/
 gradle/
+src/test/resources/output

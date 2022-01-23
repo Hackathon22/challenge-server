@@ -1,6 +1,7 @@
 package systems
 
 import com.badlogic.gdx.ApplicationAdapter
+import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration
 import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
@@ -58,48 +59,8 @@ class CameraSystem : System() {
     }
 
     override fun onEvent(event: Event, observable: IObservable) {
-        if (observable is WindowSystem) {
-            camera.setToOrtho(false, observable.width.toFloat(), observable.height.toFloat())
-        }
-    }
-}
-
-class WindowSystem : System() {
-
-    var width = 0
-        private set
-    var height = 0
-        private set
-
-    /**
-     * Initializes the system, launching a LibGDX window.
-     * Expecting the following parameters:
-     * @param arg expects:
-     *      - width (integer) - Width of the window
-     *      - height (integer) - Height of the window
-     */
-    override fun initializeLogic(vararg arg: Any): Boolean {
-        if (arg.size < 2) return false
-        return try {
-            width = arg[0] as Int
-            height = arg[0] as Int
-            true
-        }
-        catch (exc: TypeCastException) {
-            false
-        }
-    }
-
-    override fun updateLogic(instance: Instance, delta: Float) {}
-
-    override fun onEntityAdded(entity: Entity) {}
-
-    override fun onEntityRemoved(entity: Entity) {}
-
-    fun start() {
-        assert(_initialized)
-        val applicationConfiguration = LwjglApplicationConfiguration()
-        val applicationAdapter = object : ApplicationAdapter() {
+        if (event is WindowResizeEvent) {
+            camera.setToOrtho(false, event.newSize.x, event.newSize.y)
         }
     }
 }

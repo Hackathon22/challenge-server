@@ -3,7 +3,7 @@ package render
 import com.badlogic.gdx.graphics.Texture
 import parser.XMLObjectReader
 
-const val defaultSpriteConfigurationPath = "src/main/resources/spriteConfiguration.xml"
+const val defaultSpriteConfigurationPath = "src/main/resources/SpriteConfiguration.xml"
 
 const val invalidSpriteName = "invalid"
 
@@ -45,5 +45,4 @@ object SpriteRegister {
         }
         _initialized = true
     }
-
 }
