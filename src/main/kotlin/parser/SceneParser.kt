@@ -1,10 +1,9 @@
 package parser
 
-import components.DynamicComponent
-import components.TransformComponent
-import components.NetworkComponent
+import components.*
 import core.Entity
 import core.IComponent
+import core.Instance
 
 typealias Scene = HashMap<Entity, ArrayList<IComponent>>
 
@@ -97,4 +96,37 @@ object SceneParser {
 
         XMLObjectWriter.writeObject(path, componentCopy)
     }
+}
+
+
+fun main() {
+    val instance = Instance()
+
+    val scene = HashMap<Int, ArrayList<IComponent>>()
+
+    val cameraEntity = instance.createEntity()
+    val cameraCameraComponent = CameraComponent()
+    val cameraTransformComponent = TransformComponent()
+    cameraTransformComponent.pos.z = -1.0f
+
+    scene[cameraEntity] = arrayListOf(cameraCameraComponent, cameraTransformComponent)
+
+    val simpleEntity = instance.createEntity()
+    val simpleTransformComponent = TransformComponent()
+    simpleTransformComponent.pos.x = -1.0f
+    val simpleSpriteComponent = SpriteComponent()
+    simpleSpriteComponent.sprite
+
+    scene[simpleEntity] = arrayListOf(simpleTransformComponent, simpleSpriteComponent)
+
+    val simpleEntity2 = instance.createEntity()
+    val simpleTransformComponent2 = TransformComponent()
+    simpleTransformComponent2.pos.x = 1.0f
+    val simpleSpriteComponent2 = SpriteComponent("invalid")
+    simpleSpriteComponent2.sprite = "error"
+
+
+    scene[simpleEntity2] = arrayListOf(simpleTransformComponent2, simpleSpriteComponent2)
+
+    XMLObjectWriter.writeObject("src/main/resources/scenes/base_scene.xml", scene)
 }

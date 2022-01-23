@@ -42,9 +42,14 @@ class Instance {
 
     internal fun addComponentDynamic(entity: Entity, component: IComponent) {
         _componentManager.addComponentDynamic(entity, component)
+
+        val signature = _entityManager.getSignature(entity)
+        signature.set(_componentManager.getComponentTypeDynamic(component::class), true)
+        _entityManager.setSignature(entity, signature)
+        _systemManager.entitySignatureChanged(entity, signature)
     }
 
-    internal inline fun <reified T : IComponent> removeComponent(entity: Entity, component: T) {
+    internal inline fun <reified T : IComponent> removeComponent(entity: Entity) {
         _componentManager.removeComponent<T>(entity)
 
         val signature = _entityManager.getSignature(entity)

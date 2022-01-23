@@ -5,10 +5,13 @@ import com.badlogic.gdx.Gdx
 import com.esotericsoftware.kryonet.Client
 import com.esotericsoftware.kryonet.Connection
 import com.esotericsoftware.kryonet.Listener
+import components.*
 import core.*
 import net.packets.*
+import parser.SceneParser
 import render.SpriteRegister
 import systems.CameraSystem
+import systems.MovementSystem
 import systems.SpriteRenderSystem
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -17,8 +20,9 @@ const val DEFAULT_TIMEOUT = 10000
 const val BASE_WIDTH = 1200
 const val BASE_HEIGHT = 800
 
-open class ClientSession(val tcpPort: Int = DEFAULT_PORT_TCP,
-                         val udpPort: Int = DEFAULT_PORT_UDP) : ApplicationAdapter(), IObservable {
+open class ClientSession(private val scenePath : String? = "src/main/resources/scenes/base_scene.xml",
+                         private val tcpPort: Int = DEFAULT_PORT_TCP,
+                         private val udpPort: Int = DEFAULT_PORT_UDP) : ApplicationAdapter(), IObservable {
 
     private val _client = Client()
 
@@ -30,16 +34,31 @@ open class ClientSession(val tcpPort: Int = DEFAULT_PORT_TCP,
 
     private val _instance = Instance()
 
-    private var _cameraSystem : System = _instance.registerSystem<CameraSystem>()
+    private val _movementSystem : System = _instance.registerSystem<MovementSystem>()
 
-    private var _spriteSystem : System = _instance.registerSystem<SpriteRenderSystem>()
+    private val _cameraSystem : System = _instance.registerSystem<CameraSystem>()
+
+    private val _spriteSystem : System = _instance.registerSystem<SpriteRenderSystem>()
 
     override val observers = ArrayList<IObserver>()
 
     init {
+        // registers components
+        _instance.registerComponent<NetworkComponent>()
+        _instance.registerComponent<TransformComponent>()
+        _instance.registerComponent<DynamicComponent>()
+        _instance.registerComponent<CameraComponent>()
+        _instance.registerComponent<SpriteComponent>()
+
         // initializes non-graphical systems
+        _movementSystem.initialize()
+        val movementSignature = Signature()
+        movementSignature.set(_instance.getComponentType<TransformComponent>(), true)
+        movementSignature.set(_instance.getComponentType<DynamicComponent>(), true)
+        _instance.setSystemSignature<MovementSystem>(movementSignature)
 
         // sets observers on non-graphical systems
+
     }
 
     fun connect(address: String, username: String, password: String) {
@@ -95,10 +114,8 @@ open class ClientSession(val tcpPort: Int = DEFAULT_PORT_TCP,
     }
 
     protected fun handleFullSnapshot(packet: FullSnapshotResponsePacket) {
-
+        TODO("Implement")
     }
-
-    fun isConnected() = (_status == ClientStatus.CONNECTED)
 
     override fun create() {
         // Loads all the game sprites
@@ -106,10 +123,30 @@ open class ClientSession(val tcpPort: Int = DEFAULT_PORT_TCP,
 
         // initializes graphical systems
         _cameraSystem.initialize(BASE_WIDTH, BASE_HEIGHT)
+        val cameraSignature = Signature()
+        cameraSignature.set(_instance.getComponentType<CameraComponent>(), true)
+        cameraSignature.set(_instance.getComponentType<TransformComponent>(), true)
+        _instance.setSystemSignature<CameraSystem>(cameraSignature)
+
         _spriteSystem.initialize()
+        val spriteSignature = Signature()
+        spriteSignature.set(_instance.getComponentType<TransformComponent>(), true)
+        spriteSignature.set(_instance.getComponentType<SpriteComponent>(), true)
+        _instance.setSystemSignature<SpriteRenderSystem>(spriteSignature)
 
         // set observers on graphical systems
         this.addObserver(_cameraSystem)
+
+        // loads the scene
+        if (scenePath != null) {
+            val scene = SceneParser.loadScene(scenePath)
+            scene.forEach { (_, components) ->
+                val entity = _instance.createEntity()
+                components.forEach {
+                    _instance.addComponentDynamic(entity, it)
+                }
+            }
+        }
 
         _running.set(true)
     }
@@ -119,7 +156,6 @@ open class ClientSession(val tcpPort: Int = DEFAULT_PORT_TCP,
     }
 
     override fun resize(width: Int, height: Int) {
-        println("Resized window ($width, $height)")
         notifyObservers(WindowResizeEvent(Vec2F(width.toFloat(), height.toFloat())))
     }
 

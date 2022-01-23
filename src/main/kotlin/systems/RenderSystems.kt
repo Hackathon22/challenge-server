@@ -1,8 +1,5 @@
 package systems
 
-import com.badlogic.gdx.ApplicationAdapter
-import com.badlogic.gdx.Gdx
-import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration
 import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.utils.ScreenUtils
@@ -41,8 +38,8 @@ class CameraSystem : System() {
     override fun updateLogic(instance: Instance, delta: Float) {
         assert(entities.size == 1) { "Only one camera is supported at the moment" }
         if (_cameraID != null) {
-            val cameraComponent = instance.getComponent<CameraComponent>(_cameraID!!)
-            camera.translate(cameraComponent.position.x, cameraComponent.position.y)
+            val cameraComponent = instance.getComponent<TransformComponent>(_cameraID!!)
+            camera.translate(cameraComponent.pos.x, cameraComponent.pos.y)
         }
         camera.update()
     }
@@ -98,9 +95,7 @@ class SpriteRenderSystem : System() {
         _spriteBatch?.end()
     }
 
-    override fun onEntityAdded(entity: Entity) {
-    }
+    override fun onEntityAdded(entity: Entity) {}
 
-    override fun onEntityRemoved(entity: Entity) {
-    }
+    override fun onEntityRemoved(entity: Entity) {}
 }

@@ -137,6 +137,11 @@ class ComponentManager {
         return _getComponentArrayDynamicUnsafe(component)?.getDataUnsafe(entity)
     }
 
+    fun getComponentTypeDynamic(type: KClass<out IComponent>) : ComponentType {
+        assert(_componentTypes[type] != null)
+        return _componentTypes[type]!!
+    }
+
     fun registeredComponents() : MutableSet<KClass<out IComponent>> = _componentArray.keys
 
 }

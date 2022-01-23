@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<java version="15" class="java.beans.XMLDecoder">
+ <object class="java.util.HashMap">
+  <void method="put">
+   <int>0</int>
+   <object class="java.util.ArrayList">
+    <void method="add">
+     <object class="components.CameraComponent"/>
+    </void>
+    <void method="add">
+     <object class="components.TransformComponent" id="TransformComponent0">
+      <void property="pos">
+       <void property="z">
+        <float>-1.0</float>
+       </void>
+       <void property="x">
+        <float>-1.0</float>
+       </void>
+      </void>
+     </object>
+    </void>
+   </object>
+  </void>
+  <void method="put">
+   <int>1</int>
+   <object class="java.util.ArrayList">
+    <void method="add">
+     <object class="components.TransformComponent" id="TransformComponent1">
+      <void property="pos">
+       <void property="x">
+        <float>-64.0</float>
+       </void>
+      </void>
+     </object>
+    </void>
+    <void method="add">
+     <object class="components.SpriteComponent"/>
+    </void>
+   </object>
+  </void>
+  <void method="put">
+   <int>2</int>
+   <object class="java.util.ArrayList">
+    <void method="add">
+     <object class="components.TransformComponent" id="TransformComponent2">
+      <void property="pos">
+       <void property="x">
+        <float>64.0</float>
+       </void>
+      </void>
+     </object>
+    </void>
+    <void method="add">
+     <object class="components.SpriteComponent">
+      <void property="sprite">
+       <string>error</string>
+      </void>
+     </object>
+    </void>
+   </object>
+  </void>
+ </object>
+</java>

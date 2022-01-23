@@ -25,10 +25,10 @@ class MovementSystem : System() {
     }
 
     override fun onEntityAdded(entity: Entity) {
-        TODO("Add to JBox2D")
+        // TODO("Add to JBox2D")
     }
 
     override fun onEntityRemoved(entity: Entity) {
-        TODO("Remove to JBox2D")
+        // TODO("Remove to JBox2D")
     }
 }
