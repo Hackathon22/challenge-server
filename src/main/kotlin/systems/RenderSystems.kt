@@ -3,7 +3,6 @@ package systems
 import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.utils.ScreenUtils
-import components.CameraComponent
 import components.SpriteComponent
 import components.TransformComponent
 import core.*
@@ -38,8 +37,8 @@ class CameraSystem : System() {
     override fun updateLogic(instance: Instance, delta: Float) {
         assert(entities.size == 1) { "Only one camera is supported at the moment" }
         if (_cameraID != null) {
-            val cameraComponent = instance.getComponent<TransformComponent>(_cameraID!!)
-            camera.translate(cameraComponent.pos.x, cameraComponent.pos.y)
+            val transformComponent = instance.getComponent<TransformComponent>(_cameraID!!)
+            camera.position.set(transformComponent.pos.x, transformComponent.pos.y, transformComponent.pos.z)
         }
         camera.update()
     }

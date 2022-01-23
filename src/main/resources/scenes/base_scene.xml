@@ -11,10 +11,10 @@
      <object class="components.TransformComponent" id="TransformComponent0">
       <void property="pos">
        <void property="z">
-        <float>-1.0</float>
+        <float>0.0</float>
        </void>
        <void property="x">
-        <float>-1.0</float>
+        <float>0.0</float>
        </void>
       </void>
      </object>
