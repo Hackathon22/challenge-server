@@ -12,7 +12,7 @@ typealias SpriteConfiguration = HashMap<String, String>
 /**
  * Singleton instance that holds all the textures of the game.
  */
-object SpriteManager {
+object SpriteRegister {
 
     /**
      * Wherever the textures are loaded into memory.

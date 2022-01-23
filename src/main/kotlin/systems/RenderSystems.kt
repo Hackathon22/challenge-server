@@ -9,7 +9,7 @@ import components.CameraComponent
 import components.SpriteComponent
 import components.TransformComponent
 import core.*
-import render.SpriteManager
+import render.SpriteRegister
 
 class CameraSystem : System() {
 
@@ -126,7 +126,7 @@ class SpriteRenderSystem : System() {
         entities.forEach {
             val spriteComponent = instance.getComponent<SpriteComponent>(it)
             val transformComponent = instance.getComponent<TransformComponent>(it)
-            val texture = SpriteManager.getSprite(spriteComponent.sprite)
+            val texture = SpriteRegister.getSprite(spriteComponent.sprite)
             _spriteBatch?.draw(texture,
                 transformComponent.pos.x,
                 transformComponent.pos.y,

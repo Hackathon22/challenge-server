@@ -8,7 +8,7 @@ import com.esotericsoftware.kryonet.Listener
 import core.Instance
 import core.System
 import net.packets.*
-import render.SpriteManager
+import render.SpriteRegister
 import systems.CameraSystem
 import systems.SpriteRenderSystem
 import systems.WindowSystem
@@ -108,7 +108,7 @@ open class ClientSession(val tcpPort: Int = DEFAULT_PORT_TCP,
 
     override fun create() {
         // Loads all the game sprites
-        SpriteManager.initialize()
+        SpriteRegister.initialize()
     }
 
     override fun render() {
