@@ -34,16 +34,20 @@ open class ClientSession(val tcpPort: Int = DEFAULT_PORT_TCP,
 
     private val _instance = Instance()
 
-    private var _windowSystem : System
+    private var _windowSystem : System = _instance.registerSystem<WindowSystem>()
 
-    private var _cameraSystem : System
+    private var _cameraSystem : System = _instance.registerSystem<CameraSystem>()
 
-    private var _spriteSystem : System
+    private var _spriteSystem : System = _instance.registerSystem<SpriteRenderSystem>()
 
     init {
-        _windowSystem = _instance.registerSystem<WindowSystem>()
-        _cameraSystem = _instance.registerSystem<CameraSystem>()
-        _spriteSystem = _instance.registerSystem<SpriteRenderSystem>()
+        // initializes systems
+        _windowSystem.initialize(BASE_WIDTH, BASE_HEIGHT)
+        _cameraSystem.initialize(BASE_WIDTH, BASE_HEIGHT)
+        _spriteSystem.initialize()
+
+        // sets observers
+        _windowSystem.addObserver(_cameraSystem)
     }
 
     fun connect(address: String, username: String, password: String) {
@@ -105,15 +109,7 @@ open class ClientSession(val tcpPort: Int = DEFAULT_PORT_TCP,
     fun isConnected() = (_status == ClientStatus.CONNECTED)
 
     override fun create() {
-        println("Created")
-
-        // initializes systems
-        _windowSystem.initialize(BASE_WIDTH, BASE_HEIGHT)
-        _cameraSystem.initialize(BASE_WIDTH, BASE_HEIGHT)
-        _spriteSystem.initialize()
-
-        // sets observers
-        _windowSystem.addObserver(_cameraSystem)
+        
     }
 
     override fun render() {
