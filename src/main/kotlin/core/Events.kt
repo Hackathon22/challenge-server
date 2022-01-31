@@ -1,18 +1,19 @@
 package core
 
-enum class EventType {
-    VALUE_CHANGED,
-}
 
-abstract class Event {
-    abstract fun getEventType() : EventType
-}
+abstract class Event
 
-abstract class ValueChangedEvent(val valueName: String, val value: Any) : Event() {
-    override fun getEventType(): EventType {
-        return EventType.VALUE_CHANGED
-    }
-}
+abstract class ValueChangedEvent(val valueName: String, val value: Any) : Event()
+
+/**
+ * An event directly related to an entity.
+ */
+abstract class EntityEvent(val entity: Entity) : Event()
+
+/**
+ * Event called when an entity was hit
+ */
+class HitEvent(val duration: Float, entity: Entity) : EntityEvent(entity)
 
 data class WindowResizeEvent(val newSize: Vec2F) : ValueChangedEvent("windowSize", newSize)
 

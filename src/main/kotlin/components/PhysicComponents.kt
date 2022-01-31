@@ -10,7 +10,7 @@ data class TransformComponent(var pos: Vec3F = Vec3F(0.0f, 0.0f, 0.0f),
 
 data class DynamicComponent(var speed: Vec3F = Vec3F(0.0f, 0.0f, 0.0f),
                             var acceleration: Vec3F = Vec3F(0.0f, 0.0f, 0.0f),
-                            var gravity: Float = -418.56f
+                            var gravity: Float = 0.0f
 ) : IComponent
 
 

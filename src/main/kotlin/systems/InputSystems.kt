@@ -38,13 +38,18 @@ class InputSystem : System(), InputProcessor {
 
     override fun keyDown(keycode: Int): Boolean {
         if (keycode == Input.Keys.W) {
-            _queue.add(JumpCommand())
+            if (Gdx.input.isKeyPressed(Input.Keys.S)) _queue.add(StopCommand())
+            else _queue.add(MoveCommand(MoveCommand.Direction.UP))
         }
-        if (keycode == Input.Keys.A) {
+        else if (keycode == Input.Keys.S) {
+            if (Gdx.input.isKeyPressed(Input.Keys.W)) _queue.add(StopCommand())
+            else _queue.add(MoveCommand(MoveCommand.Direction.DOWN))
+        }
+        else if (keycode == Input.Keys.A) {
             if (Gdx.input.isKeyPressed(Input.Keys.D)) _queue.add(StopCommand())
             else _queue.add(MoveCommand(MoveCommand.Direction.LEFT))
         }
-        if (keycode == Input.Keys.D) {
+        else if (keycode == Input.Keys.D) {
             if (Gdx.input.isKeyPressed(Input.Keys.A)) _queue.add(StopCommand())
             else _queue.add(MoveCommand(MoveCommand.Direction.RIGHT))
         }
@@ -52,11 +57,19 @@ class InputSystem : System(), InputProcessor {
     }
 
     override fun keyUp(keycode: Int): Boolean {
-        if (keycode == Input.Keys.A) {
+        if (keycode == Input.Keys.W) {
+            if (Gdx.input.isKeyPressed(Input.Keys.S)) _queue.add(MoveCommand(MoveCommand.Direction.DOWN))
+            else _queue.add(StopCommand())
+        }
+        else if (keycode == Input.Keys.S) {
+            if (Gdx.input.isKeyPressed(Input.Keys.W)) _queue.add(MoveCommand(MoveCommand.Direction.UP))
+            else _queue.add(StopCommand())
+        }
+        else if (keycode == Input.Keys.A) {
             if (Gdx.input.isKeyPressed(Input.Keys.D)) _queue.add(MoveCommand(MoveCommand.Direction.RIGHT))
             else _queue.add(StopCommand())
         }
-        if (keycode == Input.Keys.D) {
+        else if (keycode == Input.Keys.D) {
             if (Gdx.input.isKeyPressed(Input.Keys.A)) _queue.add(MoveCommand(MoveCommand.Direction.LEFT))
             else _queue.add(StopCommand())
         }

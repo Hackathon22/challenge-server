@@ -2,7 +2,7 @@ package client;
 
 import com.badlogic.gdx.backends.lwjgl.LwjglApplication;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration;
-import net.ClientSession;
+import game.ClientSession;
 
 public class ClientDesktopLauncher {
     public static void main (String[] arg) {
@@ -14,11 +14,7 @@ public class ClientDesktopLauncher {
         applicationConfiguration.backgroundFPS = 60;
         applicationConfiguration.resizable = false;
 
-        ClientSession clientSession = new ClientSession(
-                "src/main/resources/scenes/base_scene.xml",
-                2049,
-                2050
-        );
+        ClientSession clientSession = new ClientSession("src/main/resources/scenes/base_scene.xml");
 
         new LwjglApplication(clientSession, applicationConfiguration);
     }

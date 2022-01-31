@@ -23,27 +23,35 @@ abstract class Command
 /**
  * Movement related commands, such as jumping; going left, right, stop etc...
  */
-abstract class MovementCommand : Command()
+abstract class StateCommand : Command()
 
 /**
  * Called when moving is required
  */
-class JumpCommand : MovementCommand()
+class JumpCommand : StateCommand()
 
 /**
  * Called when asking to move left or right
  */
-class MoveCommand(val direction : Direction) : MovementCommand() {
+class MoveCommand(val direction : Direction) : StateCommand() {
     enum class Direction {
         LEFT,
-        RIGHT
+        RIGHT,
+        UP,
+        DOWN
     }
+}
+
+/**
+ * Called when asking to shoot
+ */
+class ShootCommand(val angle: Float) : StateCommand() {
 }
 
 /**
  * Called upon moving release
  */
-class StopCommand : MovementCommand()
+class StopCommand : StateCommand()
 
 @NoArg
 data class CommandComponent(val controllerType: ControllerType,

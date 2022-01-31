@@ -1,13 +1,11 @@
-package net
+package game
 
 import com.badlogic.gdx.ApplicationAdapter
 import com.badlogic.gdx.Gdx
 import com.esotericsoftware.kryonet.Client
-import com.esotericsoftware.kryonet.Connection
-import com.esotericsoftware.kryonet.Listener
 import components.*
 import core.*
-import net.packets.*
+import net.ClientStatus
 import parser.SceneParser
 import render.SpriteRegister
 import systems.*
@@ -18,9 +16,7 @@ const val DEFAULT_TIMEOUT = 10000
 const val BASE_WIDTH = 1200
 const val BASE_HEIGHT = 800
 
-open class ClientSession(private val scenePath : String? = "src/main/resources/scenes/base_scene.xml",
-                         private val tcpPort: Int = DEFAULT_PORT_TCP,
-                         private val udpPort: Int = DEFAULT_PORT_UDP) : ApplicationAdapter(), IObservable {
+open class ClientSession(private val scenePath : String? = "src/main/resources/scenes/base_scene.xml") : ApplicationAdapter(), IObservable {
 
     private val _client = Client()
 
@@ -71,62 +67,6 @@ open class ClientSession(private val scenePath : String? = "src/main/resources/s
 
         // sets observers on non-graphical systems
 
-    }
-
-    fun connect(address: String, username: String, password: String) {
-        _username = username
-
-        if (!_initializedClass) {
-            registerPackets(_client.kryo)
-            _initializedClass = true
-        }
-
-        _client.start()
-        val listener = object : Listener() {
-            override fun received(connection: Connection, obj: Any) {
-                when (obj) {
-                    is DeltaSnapshotPacket -> handleDeltaSnapshot(obj)
-                    is LoginResponsePacket -> handleLoginResponse(obj)
-                    is KickPacket -> handleKick(obj)
-                    is FullSnapshotResponsePacket -> handleFullSnapshot(obj)
-                }
-            }
-        }
-        _client.addListener(listener)
-
-        _client.connect(DEFAULT_TIMEOUT, address, tcpPort, udpPort)
-        _status = ClientStatus.CONNECTED
-
-        // tries to log-in
-        _client.sendTCP(LoginPacket(username, password))
-    }
-
-    fun disconnect() {
-        _client.close()
-        _status = ClientStatus.DISCONNECTED
-    }
-
-    private fun handleLoginResponse(packet: LoginResponsePacket) {
-        if (packet.success) {
-            _status = ClientStatus.AUTHENTICATED
-        }
-        else {
-            disconnect()
-        }
-    }
-
-    private fun handleKick(packet: KickPacket) {
-        println("Kicked by server. Reason: ${packet.reason}")
-        disconnect()
-    }
-
-    protected fun handleDeltaSnapshot(packet: DeltaSnapshotPacket) {
-        println("Delta snapshot received: $packet")
-        TODO("Implement")
-    }
-
-    protected fun handleFullSnapshot(packet: FullSnapshotResponsePacket) {
-        TODO("Implement")
     }
 
     override fun create() {
