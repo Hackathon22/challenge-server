@@ -12,14 +12,25 @@ private abstract class State(protected val _entity: Entity) {
     private val eventQueue = LinkedList<Event>();
     private val commandQueue = LinkedList<Command>();
 
+    abstract val state : States
+
     abstract fun update(instance: Instance, delta: Float): State?
     abstract fun onCommand(instance: Instance, command: Command): State?
     abstract fun onEvent(event: Event): State?
+
+    protected fun setState(instance: Instance) {
+        val stateComponent = instance.getComponent<StateComponent>(_entity)
+        stateComponent.state = state
+    }
 }
 
 private class IdleState(entity: Entity) : State(entity) {
 
+    override val state: States
+        get() = States.IDLE
+
     override fun update(instance: Instance, delta: Float): State? {
+        setState(instance)
         // does nothing
         return null
     }
@@ -30,7 +41,7 @@ private class IdleState(entity: Entity) : State(entity) {
             return MovingState(command.direction, _entity)
         } else if (command is ShootCommand) {
             // returns shooting state
-            return ShootingState(command.angle, _entity)
+            return ShootingState(_entity)
         }
         return null
     }
@@ -44,32 +55,37 @@ private class IdleState(entity: Entity) : State(entity) {
 }
 
 private class MovingState(val direction: Direction, entity: Entity) : State(entity) {
+
+    override val state: States
+        get() = States.MOVING
+
     override fun update(instance: Instance, delta: Float): State? {
+        setState(instance)
         // get character max speed
-        val characterComponent = instance.getComponent<CharacterComponent>(_entity)
+        val characterComponents = instance.getComponent<CharacterComponent>(_entity)
         val dynamicComponent = instance.getComponent<DynamicComponent>(_entity)
 
         // updates character max speed before going through the dynamic system
         when (direction) {
             Direction.UP -> dynamicComponent.speed =
-                Vec3F(0.0f, characterComponent.maxSpeed, 0.0f)
+                Vec3F(0.0f, characterComponents.maxSpeed, 0.0f)
             Direction.DOWN -> dynamicComponent.speed =
-                Vec3F(0.0f, -characterComponent.maxSpeed, 0.0f)
+                Vec3F(0.0f, -characterComponents.maxSpeed, 0.0f)
             Direction.LEFT -> dynamicComponent.speed =
-                Vec3F(-characterComponent.maxSpeed, 0.0f, 0.0f)
+                Vec3F(-characterComponents.maxSpeed, 0.0f, 0.0f)
             Direction.RIGHT -> dynamicComponent.speed =
-                Vec3F(characterComponent.maxSpeed, 0.0f, 0.0f)
+                Vec3F(characterComponents.maxSpeed, 0.0f, 0.0f)
         }
 
         return null
     }
 
     override fun onCommand(instance: Instance, command: Command): State? {
-        when (command) {
-            is StopCommand -> return IdleState(_entity)
-            is ShootCommand -> return ShootingState(command.angle, _entity)
-            is MoveCommand -> return MovingState(command.direction, _entity)
-            else -> return null
+        return when (command) {
+            is StopCommand -> IdleState(_entity)
+            is ShootCommand -> ShootingState(_entity)
+            is MoveCommand -> MovingState(command.direction, _entity)
+            else -> null
         }
     }
 
@@ -81,31 +97,67 @@ private class MovingState(val direction: Direction, entity: Entity) : State(enti
     }
 }
 
-private class ShootingState(angle: Float, entity: Entity) : State(entity) {
+private class ShootingState(entity: Entity) : State(entity) {
+
+    override val state: States
+        get() = States.SHOOTING
+
+    // Was the shot made?
+    private var _hasShot = false
+
+    private var _recoveryTime : Float? = null
+
     override fun update(instance: Instance, delta: Float): State? {
-        TODO("Not yet implemented")
+        setState(instance)
+        if (!_hasShot) {
+            // checks if the state entity has a weapon, if not return to Idle
+            val weaponComponent =
+                instance.getComponent<WeaponComponent>(_entity) ?: return IdleState(_entity);
+            val weaponSystem = instance.getSystem<WeaponSystem>()
+            _recoveryTime = weaponSystem.shoot(instance, _entity)
+            _hasShot = true
+        }
+        this._recoveryTime = this._recoveryTime!!.minus(delta)
+        if (this._recoveryTime!! <= 0) return IdleState(_entity)
+        return null
     }
 
     override fun onCommand(instance: Instance, command: Command): State? {
-        TODO("Not yet implemented")
+        // as the character is on cooldown, it cannot move
+        return null
     }
 
     override fun onEvent(event: Event): State? {
-        TODO("Not yet implemented")
+        return when (event) {
+            is HitEvent -> HitState(event.duration, _entity)
+            else -> null
+        }
     }
 }
 
-private class HitState(duration: Float, entity: Entity) : State(entity) {
+private class HitState(private var _duration: Float, entity: Entity) : State(entity) {
+
+    override val state: States
+        get() = States.HIT
+
     override fun update(instance: Instance, delta: Float): State? {
-        TODO("Not yet implemented")
+        setState(instance)
+        _duration -= delta
+        if (_duration <= 0) {
+            return IdleState(_entity)
+        }
+        return null
     }
 
     override fun onCommand(instance: Instance, command: Command): State? {
-        TODO("Not yet implemented")
+        return null
     }
 
     override fun onEvent(event: Event): State? {
-        TODO("Not yet implemented")
+        return when (event) {
+            is HitEvent -> HitState(event.duration, _entity)
+            else -> null
+        }
     }
 }
 

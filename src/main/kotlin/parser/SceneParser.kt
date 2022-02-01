@@ -4,6 +4,9 @@ import components.*
 import core.Entity
 import core.IComponent
 import core.Instance
+import java.util.*
+import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
 
 typealias Scene = HashMap<Entity, ArrayList<IComponent>>
 
@@ -41,7 +44,7 @@ private fun parseSerializableNetworkComponent(component: NetworkComponent): Seri
  * @param components, a list of native components to convert to XML serializable components
  * @return a list of totally XML serializable components
  */
-internal fun convertComponentsToSerializable(components: List<IComponent>) : ArrayList<IComponent> {
+internal fun convertComponentsToSerializable(components: List<IComponent>): ArrayList<IComponent> {
     val convertedComponents = ArrayList<IComponent>()
     components.forEach { component ->
         when (component) {
@@ -57,11 +60,15 @@ internal fun convertComponentsToSerializable(components: List<IComponent>) : Arr
  * @param components, a list of totally XML serializable components (some of them are not supported by the systems)
  * @return a list of totally supported native components
  */
-internal fun convertComponentsToNative(components: List<IComponent>) : ArrayList<IComponent> {
+internal fun convertComponentsToNative(components: List<IComponent>): ArrayList<IComponent> {
     val convertedComponents = ArrayList<IComponent>()
     components.forEach { component ->
         when (component) {
-            is SerializableNetworkComponent -> convertedComponents.add(parseNetworkComponent(component))
+            is SerializableNetworkComponent -> convertedComponents.add(
+                parseNetworkComponent(
+                    component
+                )
+            )
             else -> convertedComponents.add(component)
         }
     }
@@ -96,44 +103,4 @@ object SceneParser {
 
         XMLObjectWriter.writeObject(path, componentCopy)
     }
-}
-
-
-fun main() {
-    val instance = Instance()
-
-    val scene = HashMap<Int, ArrayList<IComponent>>()
-
-    val cameraEntity = instance.createEntity()
-    val cameraCameraComponent = CameraComponent()
-    val cameraTransformComponent = TransformComponent()
-
-    scene[cameraEntity] = arrayListOf(cameraCameraComponent, cameraTransformComponent)
-
-    val simpleEntity = instance.createEntity()
-    val simpleTransformComponent = TransformComponent()
-    simpleTransformComponent.pos.x = -106.0f
-    val simpleSpriteComponent = SpriteComponent()
-    simpleSpriteComponent.sprite
-
-    scene[simpleEntity] = arrayListOf(simpleTransformComponent, simpleSpriteComponent)
-
-    val simpleEntity2 = instance.createEntity()
-    val simpleTransformComponent2 = TransformComponent()
-    simpleTransformComponent2.pos.x = 42.0f
-    val simpleSpriteComponent2 = SpriteComponent("invalid")
-    simpleSpriteComponent2.sprite = "error"
-
-    scene[simpleEntity2] = arrayListOf(simpleTransformComponent2, simpleSpriteComponent2)
-
-    val dynamicEntity = instance.createEntity()
-    val dynamicDynamicComponent = DynamicComponent()
-    dynamicDynamicComponent.speed.y = 200.0f
-    val dynamicTransformComponent = TransformComponent()
-    dynamicTransformComponent.pos.x = -32.0f
-    val dynamicSpriteComponent = SpriteComponent()
-
-    scene[dynamicEntity] = arrayListOf(dynamicTransformComponent, dynamicDynamicComponent, dynamicSpriteComponent)
-
-    XMLObjectWriter.writeObject("src/main/resources/scenes/base_scene.xml", scene)
 }

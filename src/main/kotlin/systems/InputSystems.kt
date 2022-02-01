@@ -37,40 +37,40 @@ class InputSystem : System(), InputProcessor {
     }
 
     override fun keyDown(keycode: Int): Boolean {
-        if (keycode == Input.Keys.W) {
-            if (Gdx.input.isKeyPressed(Input.Keys.S)) _queue.add(StopCommand())
+        if (keycode == Input.Keys.UP) {
+            if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) _queue.add(StopCommand())
             else _queue.add(MoveCommand(MoveCommand.Direction.UP))
         }
-        else if (keycode == Input.Keys.S) {
-            if (Gdx.input.isKeyPressed(Input.Keys.W)) _queue.add(StopCommand())
+        else if (keycode == Input.Keys.DOWN) {
+            if (Gdx.input.isKeyPressed(Input.Keys.UP)) _queue.add(StopCommand())
             else _queue.add(MoveCommand(MoveCommand.Direction.DOWN))
         }
-        else if (keycode == Input.Keys.A) {
-            if (Gdx.input.isKeyPressed(Input.Keys.D)) _queue.add(StopCommand())
+        else if (keycode == Input.Keys.LEFT) {
+            if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) _queue.add(StopCommand())
             else _queue.add(MoveCommand(MoveCommand.Direction.LEFT))
         }
-        else if (keycode == Input.Keys.D) {
-            if (Gdx.input.isKeyPressed(Input.Keys.A)) _queue.add(StopCommand())
+        else if (keycode == Input.Keys.RIGHT) {
+            if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) _queue.add(StopCommand())
             else _queue.add(MoveCommand(MoveCommand.Direction.RIGHT))
         }
         return true
     }
 
     override fun keyUp(keycode: Int): Boolean {
-        if (keycode == Input.Keys.W) {
-            if (Gdx.input.isKeyPressed(Input.Keys.S)) _queue.add(MoveCommand(MoveCommand.Direction.DOWN))
+        if (keycode == Input.Keys.UP) {
+            if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) _queue.add(MoveCommand(MoveCommand.Direction.DOWN))
             else _queue.add(StopCommand())
         }
-        else if (keycode == Input.Keys.S) {
-            if (Gdx.input.isKeyPressed(Input.Keys.W)) _queue.add(MoveCommand(MoveCommand.Direction.UP))
+        else if (keycode == Input.Keys.DOWN) {
+            if (Gdx.input.isKeyPressed(Input.Keys.UP)) _queue.add(MoveCommand(MoveCommand.Direction.UP))
             else _queue.add(StopCommand())
         }
-        else if (keycode == Input.Keys.A) {
-            if (Gdx.input.isKeyPressed(Input.Keys.D)) _queue.add(MoveCommand(MoveCommand.Direction.RIGHT))
+        else if (keycode == Input.Keys.LEFT) {
+            if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) _queue.add(MoveCommand(MoveCommand.Direction.RIGHT))
             else _queue.add(StopCommand())
         }
-        else if (keycode == Input.Keys.D) {
-            if (Gdx.input.isKeyPressed(Input.Keys.A)) _queue.add(MoveCommand(MoveCommand.Direction.LEFT))
+        else if (keycode == Input.Keys.RIGHT) {
+            if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) _queue.add(MoveCommand(MoveCommand.Direction.LEFT))
             else _queue.add(StopCommand())
         }
         return true

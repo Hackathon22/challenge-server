@@ -14,7 +14,7 @@ public class ClientDesktopLauncher {
         applicationConfiguration.backgroundFPS = 60;
         applicationConfiguration.resizable = false;
 
-        ClientSession clientSession = new ClientSession("src/main/resources/scenes/base_scene.xml");
+        ClientSession clientSession = new ClientSession("baseScene");
 
         new LwjglApplication(clientSession, applicationConfiguration);
     }

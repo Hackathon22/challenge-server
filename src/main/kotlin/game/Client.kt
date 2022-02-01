@@ -6,7 +6,6 @@ import com.esotericsoftware.kryonet.Client
 import components.*
 import core.*
 import net.ClientStatus
-import parser.SceneParser
 import render.SpriteRegister
 import systems.*
 import java.util.concurrent.atomic.AtomicBoolean
@@ -16,7 +15,7 @@ const val DEFAULT_TIMEOUT = 10000
 const val BASE_WIDTH = 1200
 const val BASE_HEIGHT = 800
 
-open class ClientSession(private val scenePath : String? = "src/main/resources/scenes/base_scene.xml") : ApplicationAdapter(), IObservable {
+open class ClientSession(private val sceneName : String? = "baseScene") : ApplicationAdapter(), IObservable {
 
     private val _client = Client()
 
@@ -41,6 +40,9 @@ open class ClientSession(private val scenePath : String? = "src/main/resources/s
     override val observers = ArrayList<IObserver>()
 
     init {
+        // prepares scene registry
+        SceneRegistry.initialize()
+
         // registers components
         _instance.registerComponent<NetworkComponent>()
         _instance.registerComponent<TransformComponent>()
@@ -49,6 +51,7 @@ open class ClientSession(private val scenePath : String? = "src/main/resources/s
         _instance.registerComponent<SpriteComponent>()
         _instance.registerComponent<CommandComponent>()
         _instance.registerComponent<StateComponent>()
+        _instance.registerComponent<CharacterComponent>()
 
         // initializes non-graphical systems
         _movementSystem.initialize()
@@ -96,8 +99,8 @@ open class ClientSession(private val scenePath : String? = "src/main/resources/s
         this.addObserver(_cameraSystem)
 
         // loads the scene
-        if (scenePath != null) {
-            val scene = SceneParser.loadScene(scenePath)
+        if (sceneName != null) {
+            val scene = SceneRegistry.loadScene(sceneName)
             scene.forEach { (_, components) ->
                 val entity = _instance.createEntity()
                 components.forEach {
@@ -119,6 +122,12 @@ open class ClientSession(private val scenePath : String? = "src/main/resources/s
 
     override fun render() {
         val deltaTime = Gdx.graphics.deltaTime
+        // get inputs
+        _inputSystem.update(_instance, deltaTime)
+
+        // simulate player state
+        _stateSystem.update(_instance, deltaTime)
+
         // physic systems
         _movementSystem.update(_instance, deltaTime)
 

@@ -3,6 +3,7 @@ package components
 import core.IComponent
 import core.NoArg
 import java.util.*
+import javax.naming.ldap.Control
 
 /**
  * Which kind on controller has impact on the command component?
@@ -45,7 +46,7 @@ class MoveCommand(val direction : Direction) : StateCommand() {
 /**
  * Called when asking to shoot
  */
-class ShootCommand(val angle: Float) : StateCommand() {
+class ShootCommand : StateCommand() {
 }
 
 /**
@@ -53,6 +54,5 @@ class ShootCommand(val angle: Float) : StateCommand() {
  */
 class StopCommand : StateCommand()
 
-@NoArg
-data class CommandComponent(val controllerType: ControllerType,
+data class CommandComponent(val controllerType: ControllerType = ControllerType.LOCAL_INPUT,
                             val commands: Queue<Command> = LinkedList()) : IComponent
