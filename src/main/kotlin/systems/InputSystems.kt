@@ -4,9 +4,7 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.InputProcessor
 import components.*
-import core.Entity
-import core.Instance
-import core.System
+import core.*
 import java.util.concurrent.LinkedBlockingQueue
 
 class InputSystem : System(), InputProcessor {
@@ -36,42 +34,40 @@ class InputSystem : System(), InputProcessor {
     override fun onEntityRemoved(entity: Entity) {
     }
 
+    @Suppress("DuplicatedCode")
     override fun keyDown(keycode: Int): Boolean {
-        if (keycode == Input.Keys.UP) {
-            if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) _queue.add(StopCommand())
-            else _queue.add(MoveCommand(MoveCommand.Direction.UP))
-        }
-        else if (keycode == Input.Keys.DOWN) {
-            if (Gdx.input.isKeyPressed(Input.Keys.UP)) _queue.add(StopCommand())
-            else _queue.add(MoveCommand(MoveCommand.Direction.DOWN))
-        }
-        else if (keycode == Input.Keys.LEFT) {
-            if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) _queue.add(StopCommand())
-            else _queue.add(MoveCommand(MoveCommand.Direction.LEFT))
-        }
-        else if (keycode == Input.Keys.RIGHT) {
-            if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) _queue.add(StopCommand())
-            else _queue.add(MoveCommand(MoveCommand.Direction.RIGHT))
+        when (keycode) {
+            Input.Keys.UP -> {
+                _queue.add(MoveCommand(Vec3F(0f, 1f, 0f)))
+            }
+            Input.Keys.DOWN -> {
+                _queue.add(MoveCommand(Vec3F(0f, -1f, 0f)))
+            }
+            Input.Keys.LEFT -> {
+                _queue.add(MoveCommand(Vec3F(-1f, 0f, 0f)))
+            }
+            Input.Keys.RIGHT -> {
+                _queue.add(MoveCommand(Vec3F(1f, 0f, 0f)))
+            }
         }
         return true
     }
 
+    @Suppress("DuplicatedCode")
     override fun keyUp(keycode: Int): Boolean {
-        if (keycode == Input.Keys.UP) {
-            if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) _queue.add(MoveCommand(MoveCommand.Direction.DOWN))
-            else _queue.add(StopCommand())
-        }
-        else if (keycode == Input.Keys.DOWN) {
-            if (Gdx.input.isKeyPressed(Input.Keys.UP)) _queue.add(MoveCommand(MoveCommand.Direction.UP))
-            else _queue.add(StopCommand())
-        }
-        else if (keycode == Input.Keys.LEFT) {
-            if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) _queue.add(MoveCommand(MoveCommand.Direction.RIGHT))
-            else _queue.add(StopCommand())
-        }
-        else if (keycode == Input.Keys.RIGHT) {
-            if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) _queue.add(MoveCommand(MoveCommand.Direction.LEFT))
-            else _queue.add(StopCommand())
+        when (keycode) {
+            Input.Keys.UP -> {
+                _queue.add(MoveCommand(Vec3F(0f, -1f, 0f)))
+            }
+            Input.Keys.DOWN -> {
+                _queue.add(MoveCommand(Vec3F(0f, 1f, 0f)))
+            }
+            Input.Keys.LEFT -> {
+                _queue.add(MoveCommand(Vec3F(1f, 0f, 0f)))
+            }
+            Input.Keys.RIGHT -> {
+                _queue.add(MoveCommand(Vec3F(-1f, 0f, 0f)))
+            }
         }
         return true
     }

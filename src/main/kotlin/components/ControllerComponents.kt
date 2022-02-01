@@ -2,6 +2,8 @@ package components
 
 import core.IComponent
 import core.NoArg
+import core.Vec2I
+import core.Vec3F
 import java.util.*
 import javax.naming.ldap.Control
 
@@ -34,14 +36,7 @@ class JumpCommand : StateCommand()
 /**
  * Called when asking to move left or right
  */
-class MoveCommand(val direction : Direction) : StateCommand() {
-    enum class Direction {
-        LEFT,
-        RIGHT,
-        UP,
-        DOWN
-    }
-}
+class MoveCommand(val direction : Vec3F) : StateCommand()
 
 /**
  * Called when asking to shoot
@@ -49,10 +44,6 @@ class MoveCommand(val direction : Direction) : StateCommand() {
 class ShootCommand : StateCommand() {
 }
 
-/**
- * Called upon moving release
- */
-class StopCommand : StateCommand()
 
 data class CommandComponent(val controllerType: ControllerType = ControllerType.LOCAL_INPUT,
                             val commands: Queue<Command> = LinkedList()) : IComponent

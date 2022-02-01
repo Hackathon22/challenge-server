@@ -1,7 +1,6 @@
 package systems
 
 import components.*
-import components.MoveCommand.Direction
 import core.*
 import java.util.*
 import kotlin.collections.HashMap
@@ -31,6 +30,10 @@ private class IdleState(entity: Entity) : State(entity) {
 
     override fun update(instance: Instance, delta: Float): State? {
         setState(instance)
+
+        val dynamicComponent = instance.getComponent<DynamicComponent>(_entity)
+        dynamicComponent.speed = Vec3F(0f, 0f, 0f)
+        
         // does nothing
         return null
     }
@@ -54,37 +57,28 @@ private class IdleState(entity: Entity) : State(entity) {
     }
 }
 
-private class MovingState(val direction: Direction, entity: Entity) : State(entity) {
+private class MovingState(private var _direction: Vec3F, entity: Entity) : State(entity) {
 
     override val state: States
         get() = States.MOVING
 
     override fun update(instance: Instance, delta: Float): State? {
         setState(instance)
+
         // get character max speed
         val characterComponents = instance.getComponent<CharacterComponent>(_entity)
         val dynamicComponent = instance.getComponent<DynamicComponent>(_entity)
 
         // updates character max speed before going through the dynamic system
-        when (direction) {
-            Direction.UP -> dynamicComponent.speed =
-                Vec3F(0.0f, characterComponents.maxSpeed, 0.0f)
-            Direction.DOWN -> dynamicComponent.speed =
-                Vec3F(0.0f, -characterComponents.maxSpeed, 0.0f)
-            Direction.LEFT -> dynamicComponent.speed =
-                Vec3F(-characterComponents.maxSpeed, 0.0f, 0.0f)
-            Direction.RIGHT -> dynamicComponent.speed =
-                Vec3F(characterComponents.maxSpeed, 0.0f, 0.0f)
-        }
+        dynamicComponent.speed = _direction * characterComponents.maxSpeed
 
         return null
     }
 
     override fun onCommand(instance: Instance, command: Command): State? {
         return when (command) {
-            is StopCommand -> IdleState(_entity)
             is ShootCommand -> ShootingState(_entity)
-            is MoveCommand -> MovingState(command.direction, _entity)
+            is MoveCommand -> changeDirection(command.direction)
             else -> null
         }
     }
@@ -93,6 +87,12 @@ private class MovingState(val direction: Direction, entity: Entity) : State(enti
         if (event is HitEvent) {
             return HitState(event.duration, event.entity)
         }
+        return null
+    }
+
+    fun changeDirection(direction : Vec3F) : State? {
+        _direction += direction
+        if (_direction.x == 0f && _direction.y == 0f && _direction.z == 0f) return IdleState(_entity)
         return null
     }
 }
