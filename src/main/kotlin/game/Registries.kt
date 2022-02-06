@@ -8,68 +8,124 @@ import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
-/**
- * This file contains hardcoded scenes and entities. XML serialization really sucks, and I have a
- * tight deadline so here comes hardcoding!!
- */
 
-object SceneRegistry {
+object EntityRegistry {
+    private val entityMap: HashMap<String, () -> MutableList<IComponent>> = hashMapOf(
+        "baseCharacter" to ::baseCharacter,
+        "basePlayer" to ::basePlayer,
+        "baseCamera" to ::baseCamera,
+        "baseRocketLauncher" to ::baseRocketLauncher
+    )
 
-    private val sceneMap = HashMap<String, () -> Scene>()
-
-    fun initialize() {
-        sceneMap["baseScene"] = ::baseScene
+    fun loadEntity(name: String): MutableList<IComponent> {
+        assert(entityMap[name] != null)
+        return entityMap[name]!!()
     }
 
-    fun loadScene(name: String) : Scene {
-        assert(sceneMap[name] != null)
-        return sceneMap[name]!!()
-    }
-
-    private fun baseScene() : Scene {
-        val instance = Instance()
-
-        val scene = HashMap<Int, ArrayList<IComponent>>()
-
-        val cameraEntity = instance.createEntity()
-        val cameraCameraComponent = CameraComponent()
-        val cameraTransformComponent = TransformComponent()
-
-        scene[cameraEntity] = arrayListOf(cameraCameraComponent, cameraTransformComponent)
-
-        val simpleEntity = instance.createEntity()
+    private fun baseCharacter(): MutableList<IComponent> {
         val simpleTransformComponent = TransformComponent()
-        simpleTransformComponent.pos.x = -106.0f
         val simpleSpriteComponent = SpriteComponent()
-        simpleSpriteComponent.sprite
+        simpleSpriteComponent.sprite = "soldier"
         val simpleStateComponent = StateComponent()
         val simpleDynamicComponent = DynamicComponent()
-        val simpleCommandComponent = CommandComponent(ControllerType.LOCAL_INPUT, LinkedList<Command>())
-        val simpleCharacterComponent = CharacterComponent(50.0f)
-
-        scene[simpleEntity] = arrayListOf(
+        val simpleCharacterComponent = CharacterComponent(100.0f)
+        return arrayListOf(
             simpleTransformComponent,
             simpleSpriteComponent,
             simpleStateComponent,
             simpleDynamicComponent,
-            simpleCommandComponent,
             simpleCharacterComponent
         )
+    }
 
-        val simpleEntity2 = instance.createEntity()
-        val simpleTransformComponent2 = TransformComponent()
-        simpleTransformComponent2.pos.x = 42.0f
-        val simpleSpriteComponent2 = SpriteComponent("invalid")
-        simpleSpriteComponent2.sprite = "error"
+    private fun basePlayer(): MutableList<IComponent> {
+        val components = loadEntity("baseCharacter")
+        val simpleCommandComponent = CommandComponent(ControllerType.LOCAL_INPUT, LinkedList())
+        components.add(simpleCommandComponent)
+        return components
+    }
 
-        scene[simpleEntity2] = arrayListOf(simpleTransformComponent2, simpleSpriteComponent2)
+    private fun baseCamera(): MutableList<IComponent> {
+        val cameraCameraComponent = CameraComponent()
+        val cameraTransformComponent = TransformComponent()
+        return arrayListOf(cameraCameraComponent, cameraTransformComponent)
+    }
 
-        val dynamicEntity = instance.createEntity()
-        val dynamicDynamicComponent = DynamicComponent()
-        dynamicDynamicComponent.speed.y = 200.0f
-        val dynamicTransformComponent = TransformComponent()
-        dynamicTransformComponent.pos.x = -32.0f
-        val dynamicSpriteComponent = SpriteComponent()
+    private fun baseRocketLauncher(): MutableList<IComponent> {
+        val impactInfo = ImpactInfo(
+            stunDuration = 1.0f,
+            knockBackDuration = 0.3f,
+            knockBackSpeed = 300.0f,
+            damage = 10.0f
+        )
+        val projectileInfo = ProjectileInfo(
+            maxSpeed = 250.0f,
+            maxBounces = 2
+        )
+        return arrayListOf(WeaponComponent(impactInfo, projectileInfo, 1.0f, "rocket"))
+    }
+}
+
+/**
+ * This file contains hardcoded scenes and entities. XML serialization really sucks, and I have a
+ * tight deadline so here comes hardcoding!!
+ */
+object SceneRegistry {
+
+    private val sceneMap: HashMap<String, () -> Scene> = hashMapOf(
+        "baseScene" to ::baseScene
+    )
+
+    private val _instance = Instance()
+
+    init {
+        _instance.registerComponent<TransformComponent>()
+        _instance.registerComponent<DynamicComponent>()
+        _instance.registerComponent<CharacterComponent>()
+        _instance.registerComponent<CameraComponent>()
+        _instance.registerComponent<NetworkComponent>()
+        _instance.registerComponent<CommandComponent>()
+        _instance.registerComponent<StateComponent>()
+        _instance.registerComponent<SpriteComponent>()
+        _instance.registerComponent<ProjectileComponent>()
+        _instance.registerComponent<WeaponComponent>()
+    }
+
+    fun loadScene(name: String): Scene {
+        assert(sceneMap[name] != null)
+        return sceneMap[name]!!()
+    }
+
+    private fun baseScene(): Scene {
+
+        val scene = HashMap<Int, ArrayList<IComponent>>()
+
+        val cameraEntity = _instance.createEntity()
+        EntityRegistry.loadEntity("baseCamera").forEach {
+            _instance.addComponentDynamic(cameraEntity, it)
+        }
+        scene[cameraEntity] = _instance.getAllComponents(cameraEntity)
+
+        val simpleEntity = _instance.createEntity()
+        EntityRegistry.loadEntity("basePlayer").forEach {
+            _instance.addComponentDynamic(simpleEntity, it)
+        }
+        EntityRegistry.loadEntity("baseRocketLauncher").forEach {
+            _instance.addComponentDynamic(simpleEntity, it)
+        }
+        _instance.getComponent<TransformComponent>(simpleEntity).pos.x = -106.0f
+
+        scene[simpleEntity] = _instance.getAllComponents(simpleEntity)
+
+        val simpleEntity2 = _instance.createEntity()
+        EntityRegistry.loadEntity("baseCharacter").forEach {
+            _instance.addComponentDynamic(simpleEntity2, it)
+        }
+        EntityRegistry.loadEntity("baseRocketLauncher").forEach {
+            _instance.addComponentDynamic(simpleEntity2, it)
+        }
+
+        scene[simpleEntity2] = _instance.getAllComponents(simpleEntity2)
 
         return scene
     }

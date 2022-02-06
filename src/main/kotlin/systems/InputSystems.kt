@@ -49,6 +49,9 @@ class InputSystem : System(), InputProcessor {
             Input.Keys.RIGHT -> {
                 _queue.add(MoveCommand(Vec3F(1f, 0f, 0f)))
             }
+            Input.Keys.SPACE -> {
+                _queue.add(ShootCommand())
+            }
         }
         return true
     }
@@ -57,16 +60,16 @@ class InputSystem : System(), InputProcessor {
     override fun keyUp(keycode: Int): Boolean {
         when (keycode) {
             Input.Keys.UP -> {
-                _queue.add(MoveCommand(Vec3F(0f, -1f, 0f)))
+                _queue.add(MoveCommand(Vec3F(0f, -1f, 0f), true))
             }
             Input.Keys.DOWN -> {
-                _queue.add(MoveCommand(Vec3F(0f, 1f, 0f)))
+                _queue.add(MoveCommand(Vec3F(0f, 1f, 0f), true))
             }
             Input.Keys.LEFT -> {
-                _queue.add(MoveCommand(Vec3F(1f, 0f, 0f)))
+                _queue.add(MoveCommand(Vec3F(1f, 0f, 0f), true))
             }
             Input.Keys.RIGHT -> {
-                _queue.add(MoveCommand(Vec3F(-1f, 0f, 0f)))
+                _queue.add(MoveCommand(Vec3F(-1f, 0f, 0f), true))
             }
         }
         return true

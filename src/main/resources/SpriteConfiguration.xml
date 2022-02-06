@@ -5,5 +5,13 @@
    <string>invalid</string>
    <string>src/main/resources/sprites/invalidFront.png</string>
   </void>
+  <void method="put">
+   <string>rocket</string>
+   <string>src/main/resources/sprites/rocket.png</string>
+  </void>
+  <void method="put">
+   <string>soldier</string>
+   <string>src/main/resources/sprites/soldier.png</string>
+  </void>
  </object>
 </java>

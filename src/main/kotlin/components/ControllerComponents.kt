@@ -36,7 +36,7 @@ class JumpCommand : StateCommand()
 /**
  * Called when asking to move left or right
  */
-class MoveCommand(val direction : Vec3F) : StateCommand()
+class MoveCommand(val direction : Vec3F, val release: Boolean = false) : StateCommand()
 
 /**
  * Called when asking to shoot

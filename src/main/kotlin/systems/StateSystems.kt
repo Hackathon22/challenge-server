@@ -17,6 +17,10 @@ private abstract class State(protected val _entity: Entity) {
     abstract fun onCommand(instance: Instance, command: Command): State?
     abstract fun onEvent(event: Event): State?
 
+
+    abstract fun onStateBegin(instance: Instance)
+    abstract fun onStateEnd(instance: Instance)
+
     protected fun setState(instance: Instance) {
         val stateComponent = instance.getComponent<StateComponent>(_entity)
         stateComponent.state = state
@@ -29,11 +33,9 @@ private class IdleState(entity: Entity) : State(entity) {
         get() = States.IDLE
 
     override fun update(instance: Instance, delta: Float): State? {
-        setState(instance)
-
         val dynamicComponent = instance.getComponent<DynamicComponent>(_entity)
         dynamicComponent.speed = Vec3F(0f, 0f, 0f)
-        
+
         // does nothing
         return null
     }
@@ -41,7 +43,8 @@ private class IdleState(entity: Entity) : State(entity) {
     override fun onCommand(instance: Instance, command: Command): State? {
         if (command is MoveCommand) {
             // movement command, return movement state
-            return MovingState(command.direction, _entity)
+            if (!command.release)
+                return MovingState(command.direction, _entity)
         } else if (command is ShootCommand) {
             // returns shooting state
             return ShootingState(_entity)
@@ -54,6 +57,13 @@ private class IdleState(entity: Entity) : State(entity) {
             return HitState(event.duration, event.entity)
         }
         return null
+    }
+
+    override fun onStateBegin(instance: Instance) {
+        setState(instance)
+    }
+
+    override fun onStateEnd(instance: Instance) {
     }
 }
 
@@ -78,7 +88,7 @@ private class MovingState(private var _direction: Vec3F, entity: Entity) : State
     override fun onCommand(instance: Instance, command: Command): State? {
         return when (command) {
             is ShootCommand -> ShootingState(_entity)
-            is MoveCommand -> changeDirection(command.direction)
+            is MoveCommand -> changeDirection(instance, command.direction)
             else -> null
         }
     }
@@ -90,10 +100,27 @@ private class MovingState(private var _direction: Vec3F, entity: Entity) : State
         return null
     }
 
-    fun changeDirection(direction : Vec3F) : State? {
+    fun changeDirection(instance: Instance, direction : Vec3F) : State? {
         _direction += direction
+
+        // get character max speed
+        val characterComponents = instance.getComponent<CharacterComponent>(_entity)
+        val dynamicComponent = instance.getComponent<DynamicComponent>(_entity)
+
+        // updates character max speed before going through the dynamic system
+        dynamicComponent.speed = _direction * characterComponents.maxSpeed
+
         if (_direction.x == 0f && _direction.y == 0f && _direction.z == 0f) return IdleState(_entity)
         return null
+    }
+
+    override fun onStateBegin(instance: Instance) {
+        setState(instance)
+    }
+
+    override fun onStateEnd(instance: Instance) {
+        _direction = Vec3F(0.0f, 0.0f, 0.0f)
+        changeDirection(instance, Vec3F(0.0f, 0.0f, 0.0f))
     }
 }
 
@@ -102,21 +129,9 @@ private class ShootingState(entity: Entity) : State(entity) {
     override val state: States
         get() = States.SHOOTING
 
-    // Was the shot made?
-    private var _hasShot = false
-
     private var _recoveryTime : Float? = null
 
     override fun update(instance: Instance, delta: Float): State? {
-        setState(instance)
-        if (!_hasShot) {
-            // checks if the state entity has a weapon, if not return to Idle
-            val weaponComponent =
-                instance.getComponent<WeaponComponent>(_entity) ?: return IdleState(_entity);
-            val weaponSystem = instance.getSystem<WeaponSystem>()
-            _recoveryTime = weaponSystem.shoot(instance, _entity)
-            _hasShot = true
-        }
         this._recoveryTime = this._recoveryTime!!.minus(delta)
         if (this._recoveryTime!! <= 0) return IdleState(_entity)
         return null
@@ -133,6 +148,16 @@ private class ShootingState(entity: Entity) : State(entity) {
             else -> null
         }
     }
+
+    override fun onStateBegin(instance: Instance) {
+        setState(instance)
+        val weaponComponent = instance.getComponent<WeaponComponent>(_entity) ?: return
+        val weaponSystem = instance.getSystem<WeaponSystem>()
+        _recoveryTime = weaponSystem.shoot(instance, _entity)
+    }
+
+    override fun onStateEnd(instance: Instance) {
+    }
 }
 
 private class HitState(private var _duration: Float, entity: Entity) : State(entity) {
@@ -141,7 +166,6 @@ private class HitState(private var _duration: Float, entity: Entity) : State(ent
         get() = States.HIT
 
     override fun update(instance: Instance, delta: Float): State? {
-        setState(instance)
         _duration -= delta
         if (_duration <= 0) {
             return IdleState(_entity)
@@ -159,6 +183,13 @@ private class HitState(private var _duration: Float, entity: Entity) : State(ent
             else -> null
         }
     }
+
+    override fun onStateBegin(instance: Instance) {
+        setState(instance)
+    }
+
+    override fun onStateEnd(instance: Instance) {
+    }
 }
 
 class StateSystem : System() {
@@ -172,15 +203,17 @@ class StateSystem : System() {
     override fun updateLogic(instance: Instance, delta: Float) {
         entities.forEach { entity ->
             val commandComponent = instance.getComponent<CommandComponent>(entity)
-            commandComponent.commands.forEach { cmd ->
+            val commandIterator = commandComponent.commands.iterator()
+            while (commandIterator.hasNext()) {
+                val cmd = commandIterator.next()
                 if (cmd is StateCommand) {
                     val newState = entityStates[entity]!!.onCommand(instance, cmd)
-                    commandComponent.commands.remove(cmd) // possible illegal since we are looping
-                    if (newState != null) entityStates[entity] = newState
+                    commandIterator.remove()
+                    changeState(instance, newState, entity)
                 }
             }
             val newState = entityStates[entity]!!.update(instance, delta)
-            if (newState != null) entityStates[entity] = newState
+            changeState(instance, newState, entity)
         }
     }
 
@@ -194,7 +227,15 @@ class StateSystem : System() {
 
     override fun onEvent(event: Event, observable: IObservable) {
         if (event is EntityEvent) {
-            entityStates[event.entity]!!.onEvent(event)
+            entityStates[event.entity]?.onEvent(event)
+        }
+    }
+
+    private fun changeState(instance: Instance, state: State?, entity: Entity) {
+        if (state != null) {
+            entityStates[entity]?.onStateEnd(instance)
+            entityStates[entity] = state
+            entityStates[entity]?.onStateBegin(instance)
         }
     }
 }

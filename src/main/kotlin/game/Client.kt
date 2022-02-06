@@ -37,12 +37,11 @@ open class ClientSession(private val sceneName : String? = "baseScene") : Applic
 
     private val _stateSystem : System = _instance.registerSystem<StateSystem>()
 
+    private val _weaponSystem : System = _instance.registerSystem<WeaponSystem>()
+
     override val observers = ArrayList<IObserver>()
 
     init {
-        // prepares scene registry
-        SceneRegistry.initialize()
-
         // registers components
         _instance.registerComponent<NetworkComponent>()
         _instance.registerComponent<TransformComponent>()
@@ -52,6 +51,8 @@ open class ClientSession(private val sceneName : String? = "baseScene") : Applic
         _instance.registerComponent<CommandComponent>()
         _instance.registerComponent<StateComponent>()
         _instance.registerComponent<CharacterComponent>()
+        _instance.registerComponent<WeaponComponent>()
+        _instance.registerComponent<ProjectileComponent>()
 
         // initializes non-graphical systems
         _movementSystem.initialize()
@@ -69,7 +70,10 @@ open class ClientSession(private val sceneName : String? = "baseScene") : Applic
         _instance.setSystemSignature<StateSystem>(stateSignature)
 
         // sets observers on non-graphical systems
-
+        _weaponSystem.initialize()
+        val weaponSignature = Signature()
+        weaponSignature.set(_instance.getComponentType<ProjectileComponent>(), true)
+        _instance.setSystemSignature<WeaponSystem>(weaponSignature)
     }
 
     override fun create() {

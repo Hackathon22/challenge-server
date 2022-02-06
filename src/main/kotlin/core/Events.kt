@@ -15,6 +15,16 @@ abstract class EntityEvent(val entity: Entity) : Event()
  */
 class HitEvent(val duration: Float, entity: Entity) : EntityEvent(entity)
 
+/**
+ * A physical event related to a certain entity
+ */
+abstract class PhysicalEvent(entity: Entity) : EntityEvent(entity)
+
+/**
+ * Called when a collision is detected between two entities.
+ */
+class CollisionEvent(val collidedEntity: Entity, entity: Entity) : PhysicalEvent(entity)
+
 data class WindowResizeEvent(val newSize: Vec2F) : ValueChangedEvent("windowSize", newSize)
 
 interface IObserver {
