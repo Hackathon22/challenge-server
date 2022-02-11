@@ -28,7 +28,7 @@ object EntityRegistry {
         simpleSpriteComponent.sprite = "soldier"
         val simpleStateComponent = StateComponent()
         val simpleDynamicComponent = DynamicComponent()
-        val simpleCharacterComponent = CharacterComponent(100.0f)
+        val simpleCharacterComponent = CharacterComponent(100.0f, 200.0f)
         return arrayListOf(
             simpleTransformComponent,
             simpleSpriteComponent,
@@ -114,6 +114,7 @@ object SceneRegistry {
             _instance.addComponentDynamic(simpleEntity, it)
         }
         _instance.getComponent<TransformComponent>(simpleEntity).pos.x = -106.0f
+        _instance.getComponent<TransformComponent>(simpleEntity).rot.z = 45.0f
 
         scene[simpleEntity] = _instance.getAllComponents(simpleEntity)
 

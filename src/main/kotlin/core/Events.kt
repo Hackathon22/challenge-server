@@ -25,6 +25,8 @@ abstract class PhysicalEvent(entity: Entity) : EntityEvent(entity)
  */
 class CollisionEvent(val collidedEntity: Entity, entity: Entity) : PhysicalEvent(entity)
 
+abstract class InputEvent : Event()
+
 data class WindowResizeEvent(val newSize: Vec2F) : ValueChangedEvent("windowSize", newSize)
 
 interface IObserver {

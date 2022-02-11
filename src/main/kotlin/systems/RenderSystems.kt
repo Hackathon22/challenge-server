@@ -2,11 +2,13 @@ package systems
 
 import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
+import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.utils.ScreenUtils
 import components.SpriteComponent
 import components.TransformComponent
 import core.*
 import render.SpriteRegister
+import java.lang.Math.PI
 
 class CameraSystem : System() {
 
@@ -84,11 +86,19 @@ class SpriteRenderSystem : System() {
             val spriteComponent = instance.getComponent<SpriteComponent>(it)
             val transformComponent = instance.getComponent<TransformComponent>(it)
             val texture = SpriteRegister.getSprite(spriteComponent.sprite)
-            _spriteBatch?.draw(texture,
-                transformComponent.pos.x,
-                transformComponent.pos.y,
-                transformComponent.scale.x * texture.width,
-                transformComponent.scale.y * texture.height)
+            val region = TextureRegion(texture)
+            _spriteBatch?.draw(
+                region,
+                transformComponent.pos.x - texture.width.toFloat() / 2f,
+                transformComponent.pos.y - texture.height.toFloat() / 2f,
+                0f,
+                0f,
+                texture.width.toFloat(),
+                texture.height.toFloat(),
+                transformComponent.scale.x,
+                transformComponent.scale.y,
+                transformComponent.rot.z
+            )
         }
 
         _spriteBatch?.end()

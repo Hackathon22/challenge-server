@@ -38,6 +38,8 @@ class JumpCommand : StateCommand()
  */
 class MoveCommand(val direction : Vec3F, val release: Boolean = false) : StateCommand()
 
+class CursorMovedCommand(val worldPosition: Vec3F) : Command()
+
 /**
  * Called when asking to shoot
  */

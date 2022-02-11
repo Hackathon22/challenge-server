@@ -1,7 +1,6 @@
 package systems
 
-import com.badlogic.gdx.math.MathUtils.cos
-import com.badlogic.gdx.math.MathUtils.sin
+import com.badlogic.gdx.math.MathUtils.*
 import components.*
 import core.*
 
@@ -40,14 +39,16 @@ class WeaponSystem : System() {
         // transform component, giving the position of the player + 10 pixels
         val transformComponent = TransformComponent()
         transformComponent.pos.x =
-            entityTransformComponent.pos.x + 10 * cos(shooterAngle)
+            entityTransformComponent.pos.x + 10 * cosDeg(shooterAngle)
         transformComponent.pos.y =
-            entityTransformComponent.pos.y + 10 * sin(shooterAngle)
+            entityTransformComponent.pos.y + 10 * sinDeg(shooterAngle)
+
+        transformComponent.rot.z = shooterAngle
 
         // dynamic component, giving the speed of the projectile
         val dynamicComponent = DynamicComponent()
-        dynamicComponent.speed.x = entityWeaponComponent.projectile.maxSpeed * cos(shooterAngle)
-        dynamicComponent.speed.y = entityWeaponComponent.projectile.maxSpeed * sin(shooterAngle)
+        dynamicComponent.speed.x = entityWeaponComponent.projectile.maxSpeed * cosDeg(shooterAngle)
+        dynamicComponent.speed.y = entityWeaponComponent.projectile.maxSpeed * sinDeg(shooterAngle)
 
         // projectile component, containing all the
         val projectileComponent = ProjectileComponent(
