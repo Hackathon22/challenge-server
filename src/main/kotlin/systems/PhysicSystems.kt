@@ -1,10 +1,15 @@
 package systems
 
+import com.badlogic.gdx.math.Vector2
+import com.badlogic.gdx.physics.box2d.*
 import components.DynamicComponent
 import components.TransformComponent
 import core.Entity
 import core.Instance
 import core.System
+import core.Vec3F
+import java.util.*
+import kotlin.collections.HashMap
 
 class MovementSystem : System() {
 
@@ -26,10 +31,45 @@ class MovementSystem : System() {
     }
 
     override fun onEntityAdded(entity: Entity) {
-        // TODO("Add to JBox2D")
     }
 
     override fun onEntityRemoved(entity: Entity) {
-        // TODO("Remove to JBox2D")
+    }
+}
+
+class CollisionSystem : System() {
+
+    private val _entityPositions = HashMap<Entity, Vec3F>()
+
+    private val _addedEntities = LinkedList<Entity>()
+    private val _removedEntities = LinkedList<Entity>()
+
+    private val _world = World(Vector2(0.0f, 0.0f), true)
+
+    override fun initializeLogic(vararg arg: Any): Boolean {
+        return true
+    }
+
+    override fun updateLogic(instance: Instance, delta: Float) {
+        _addedEntities.forEach {
+            // adds the entity entry in the position registry
+            val transformComponent = instance.getComponent<TransformComponent>(it)
+            _entityPositions[it] = transformComponent.pos
+        }
+
+        _removedEntities.forEach {
+            _entityPositions.remove(it)
+        }
+
+        _addedEntities.clear()
+        _removedEntities.clear()
+    }
+
+    override fun onEntityAdded(entity: Entity) {
+        _addedEntities.add(entity)
+    }
+
+    override fun onEntityRemoved(entity: Entity) {
+        _removedEntities.add(entity)
     }
 }

@@ -22,6 +22,8 @@ dependencies {
     implementation "com.esotericsoftware:kryonet:2.22.0-RC1"
     api "com.badlogicgames.gdx:gdx-backend-lwjgl:1.10.0"
     api "com.badlogicgames.gdx:gdx-platform:1.10.0:natives-desktop"
+    implementation "com.badlogicgames.gdx:gdx-box2d:1.10.0"
+    implementation "com.badlogicgames.gdx:gdx-box2d-platform:1.10.0:natives-x86"
 }
 
 test {
