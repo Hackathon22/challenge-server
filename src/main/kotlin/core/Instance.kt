@@ -20,10 +20,12 @@ class Instance {
     }
 
     fun destroyEntity(entity: Entity) {
-        _entityManager.destroyEntity(entity)
-        _componentManager.entityDestroyed(entity)
-        _systemManager.entityDestroyed(entity)
-        entities.remove(entity)
+        if (_entityManager.hasEntity(entity)) {
+            _entityManager.destroyEntity(entity)
+            _componentManager.entityDestroyed(entity)
+            _systemManager.entityDestroyed(entity)
+            entities.remove(entity)
+        }
     }
 
     internal inline fun <reified T : IComponent> registerComponent() {
@@ -61,6 +63,10 @@ class Instance {
 
     internal fun getComponentDynamic(entity: Entity, component: KClass<out IComponent>) : IComponent {
         return _componentManager.getComponentDynamic(entity, component)
+    }
+
+    internal fun getComponentDynamicUnsafe(entity: Entity, component: KClass<out IComponent>) : IComponent? {
+        return _componentManager.getComponentDynamicUnsafe(entity, component)
     }
 
     internal inline fun <reified T : IComponent> getComponent(entity: Entity) : T {

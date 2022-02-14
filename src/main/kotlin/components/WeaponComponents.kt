@@ -23,10 +23,11 @@ data class ExplosionInfo(val explosionRadius: Float)
 
 data class ProjectileInfo(
     val maxSpeed: Float,
-    val maxBounces: Int
+    val maxBounces: Int,
+    val maxTime: Float
 )
 
-data class ProjectileComponent(val impact: ImpactInfo, val info: ProjectileInfo) : IComponent
+data class ProjectileComponent(var remainingBounces: Int, var remainingTime: Float, val impact: ImpactInfo, val info: ProjectileInfo) : IComponent
 
 /**
  * Component attached to the carrier of the weapon, generally a character

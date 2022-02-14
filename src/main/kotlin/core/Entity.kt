@@ -23,6 +23,12 @@ class EntityManager {
             totalElements--
             holeQueue.add(element)
         }
+
+        fun peekElement() : Int {
+            if (holeQueue.size > 0)
+                return holeQueue.peek()
+            return totalElements
+        }
     }
 
     private val _indexCounter = IdCounter()
@@ -50,4 +56,7 @@ class EntityManager {
 
     fun getSignature(entity: Entity) : Signature = _entitySignature[entity]
 
+    fun hasEntity(entity: Entity) : Boolean {
+        return _indexCounter.peekElement() < entity
+    }
 }

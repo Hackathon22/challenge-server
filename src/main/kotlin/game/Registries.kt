@@ -59,10 +59,11 @@ object EntityRegistry {
             damage = 10.0f
         )
         val projectileInfo = ProjectileInfo(
-            maxSpeed = 250.0f,
-            maxBounces = 2
+            maxSpeed = 400.0f,
+            maxBounces = 2,
+            maxTime = 5.0f  // maximum two seconds
         )
-        return arrayListOf(WeaponComponent(impactInfo, projectileInfo, 1.0f, "rocket"))
+        return arrayListOf(WeaponComponent(impactInfo, projectileInfo, 0.5f, "rocket"))
     }
 }
 
@@ -113,7 +114,8 @@ object SceneRegistry {
         EntityRegistry.loadEntity("baseRocketLauncher").forEach {
             _instance.addComponentDynamic(simpleEntity, it)
         }
-        _instance.getComponent<TransformComponent>(simpleEntity).pos.x = -106.0f
+        _instance.getComponent<TransformComponent>(simpleEntity).pos.x = 0f
+        _instance.getComponent<TransformComponent>(simpleEntity).pos.y = 0f
         _instance.getComponent<TransformComponent>(simpleEntity).rot.z = 45.0f
 
         scene[simpleEntity] = _instance.getAllComponents(simpleEntity)

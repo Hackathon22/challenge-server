@@ -6,6 +6,7 @@ import com.esotericsoftware.kryonet.Client
 import components.*
 import core.*
 import net.ClientStatus
+import org.lwjgl.Sys
 import render.SpriteRegister
 import systems.*
 import java.util.concurrent.atomic.AtomicBoolean
@@ -39,6 +40,8 @@ open class ClientSession(private val sceneName : String? = "baseScene") : Applic
 
     private val _weaponSystem : System = _instance.registerSystem<WeaponSystem>()
 
+    private val _projectileSystem : System = _instance.registerSystem<ProjectileSystem>()
+
     override val observers = ArrayList<IObserver>()
 
     init {
@@ -69,11 +72,20 @@ open class ClientSession(private val sceneName : String? = "baseScene") : Applic
         stateSignature.set(_instance.getComponentType<DynamicComponent>(), true)
         _instance.setSystemSignature<StateSystem>(stateSignature)
 
-        // sets observers on non-graphical systems
         _weaponSystem.initialize()
         val weaponSignature = Signature()
         weaponSignature.set(_instance.getComponentType<ProjectileComponent>(), true)
         _instance.setSystemSignature<WeaponSystem>(weaponSignature)
+
+        _projectileSystem.initialize()
+        val projectileSignature = Signature()
+        projectileSignature.set(_instance.getComponentType<ProjectileComponent>(), true)
+        projectileSignature.set(_instance.getComponentType<TransformComponent>(), true)
+        projectileSignature.set(_instance.getComponentType<DynamicComponent>(), true)
+        _instance.setSystemSignature<ProjectileSystem>(projectileSignature)
+
+        // sets observers on non-graphical systems
+
     }
 
     override fun create() {
@@ -134,6 +146,8 @@ open class ClientSession(private val sceneName : String? = "baseScene") : Applic
 
         // physic systems
         _movementSystem.update(_instance, deltaTime)
+
+        _projectileSystem.update(_instance, deltaTime)
 
         // render systems
         _cameraSystem.update(_instance, deltaTime)

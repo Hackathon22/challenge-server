@@ -23,7 +23,7 @@ abstract class PhysicalEvent(entity: Entity) : EntityEvent(entity)
 /**
  * Called when a collision is detected between two entities.
  */
-class CollisionEvent(val collidedEntity: Entity, entity: Entity) : PhysicalEvent(entity)
+class CollisionEvent(val collidedEntity: Entity, entity: Entity, val angle: Float) : PhysicalEvent(entity)
 
 abstract class InputEvent : Event()
 

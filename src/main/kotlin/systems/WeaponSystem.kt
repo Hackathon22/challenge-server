@@ -3,6 +3,8 @@ package systems
 import com.badlogic.gdx.math.MathUtils.*
 import components.*
 import core.*
+import java.util.*
+import kotlin.collections.ArrayList
 
 /**
  * System that takes care of adding new projectile upon shooting, and that takes care of projectile collision events
@@ -52,6 +54,8 @@ class WeaponSystem : System() {
 
         // projectile component, containing all the
         val projectileComponent = ProjectileComponent(
+            entityWeaponComponent.projectile.maxBounces,
+            entityWeaponComponent.projectile.maxTime,
             entityWeaponComponent.impact.copy(),
             entityWeaponComponent.projectile.copy()
         )
@@ -68,8 +72,85 @@ class WeaponSystem : System() {
     }
 
     override fun onEvent(event: Event, observable: IObservable) {
+    }
+}
+
+/**
+ * System that takes care of tracking all the projectile lifetime, bounces and impacts.
+ */
+class ProjectileSystem : System() {
+
+    /**
+     * Contains a list of pairs containing the collided entities as well as their
+     */
+    private val _collidedEntities = LinkedList<Triple<Entity, Entity, Float>>()
+
+    override fun initializeLogic(vararg arg: Any): Boolean {
+        return true
+    }
+
+    override fun updateLogic(instance: Instance, delta: Float) {
+        // decreases the projectiles lifetime
+        val toRemoveEntities = ArrayList<Entity>()
+        entities.forEach {
+            val projectileComponent = instance.getComponent<ProjectileComponent>(it)
+            projectileComponent.remainingTime -= delta
+            if (projectileComponent.remainingTime < 0) {
+                explode(it, instance)
+                toRemoveEntities.add(it)
+            }
+        }
+       _collidedEntities.forEach {
+            // get the projectile's component, if it still exists
+            val projectileComponent =
+                instance.getComponentDynamicUnsafe(it.first, ProjectileComponent::class) ?: return
+
+            // checks if the projectile collided with a character
+            val collidedCharacter = instance.getComponentDynamicUnsafe(it.second, CharacterComponent::class)
+            if (collidedCharacter != null) {
+                explode(it.first, instance)
+                toRemoveEntities.add(it.first)
+                return
+            }
+
+            // reduces the bounces
+            (projectileComponent as ProjectileComponent).remainingBounces -= 1
+            if ((projectileComponent as ProjectileComponent).remainingBounces < 0) {
+                explode(it.first, instance)
+                toRemoveEntities.add(it.first)
+            }
+            else bounce(it.first, instance, it.third)
+        }
+
+        toRemoveEntities.forEach { instance.destroyEntity(it) }
+        _collidedEntities.clear()
+    }
+
+    override fun onEntityAdded(entity: Entity) {
+    }
+
+    override fun onEntityRemoved(entity: Entity) {
+    }
+
+    /**
+     * Projectile explosion on other entities.
+     */
+    private fun explode(entity: Entity, instance: Instance) {
+        // TODO implement damage
+    }
+
+    private fun bounce(entity: Entity, instance: Instance, angle: Float) {
+        // changes the projectile speed
+        val dynamicComponent = instance.getComponent<DynamicComponent>(entity)
+
+        // TODO implement bounce by changing the dynamic component
+    }
+
+    override fun onEvent(event: Event, observable: IObservable) {
         if (event is CollisionEvent) {
-            // TODO code collision behaviour
+            if (event.entity in entities) {
+                _collidedEntities.add(Triple(event.entity, event.collidedEntity, event.angle))
+            }
         }
     }
 }

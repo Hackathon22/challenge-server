@@ -105,7 +105,6 @@ class InputSystem : System(), InputProcessor {
     override fun keyTyped(character: Char): Boolean = true
 
     override fun touchDown(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
-        println(button)
         _queue.add(ShootCommand())
         return true
     }
