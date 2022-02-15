@@ -2,6 +2,7 @@ package game
 
 import com.badlogic.gdx.ApplicationAdapter
 import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.physics.box2d.Body
 import com.esotericsoftware.kryonet.Client
 import components.*
 import core.*
@@ -42,6 +43,8 @@ open class ClientSession(private val sceneName : String? = "baseScene") : Applic
 
     private val _projectileSystem : System = _instance.registerSystem<ProjectileSystem>()
 
+    private val _collisionSystem : System = _instance.registerSystem<CollisionSystem>()
+
     override val observers = ArrayList<IObserver>()
 
     init {
@@ -56,6 +59,7 @@ open class ClientSession(private val sceneName : String? = "baseScene") : Applic
         _instance.registerComponent<CharacterComponent>()
         _instance.registerComponent<WeaponComponent>()
         _instance.registerComponent<ProjectileComponent>()
+        _instance.registerComponent<BodyComponent>()
 
         // initializes non-graphical systems
         _movementSystem.initialize()
@@ -63,6 +67,12 @@ open class ClientSession(private val sceneName : String? = "baseScene") : Applic
         movementSignature.set(_instance.getComponentType<TransformComponent>(), true)
         movementSignature.set(_instance.getComponentType<DynamicComponent>(), true)
         _instance.setSystemSignature<MovementSystem>(movementSignature)
+
+        _collisionSystem.initialize()
+        val collisionSignature = Signature()
+        collisionSignature.set(_instance.getComponentType<TransformComponent>(), true)
+        collisionSignature.set(_instance.getComponentType<BodyComponent>(), true)
+        _instance.setSystemSignature<CollisionSystem>(collisionSignature)
 
         _stateSystem.initialize()
         val stateSignature = Signature()
@@ -85,6 +95,7 @@ open class ClientSession(private val sceneName : String? = "baseScene") : Applic
         _instance.setSystemSignature<ProjectileSystem>(projectileSignature)
 
         // sets observers on non-graphical systems
+        _collisionSystem.addObserver(_projectileSystem)  // bullet collision
 
     }
 
@@ -146,6 +157,7 @@ open class ClientSession(private val sceneName : String? = "baseScene") : Applic
 
         // physic systems
         _movementSystem.update(_instance, deltaTime)
+        _collisionSystem.update(_instance, deltaTime)
 
         _projectileSystem.update(_instance, deltaTime)
 

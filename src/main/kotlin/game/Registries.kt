@@ -4,6 +4,7 @@ import components.*
 import core.IComponent
 import core.Instance
 import parser.Scene
+import systems.CollisionSystem
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
@@ -29,12 +30,14 @@ object EntityRegistry {
         val simpleStateComponent = StateComponent()
         val simpleDynamicComponent = DynamicComponent()
         val simpleCharacterComponent = CharacterComponent(100.0f, 200.0f)
+        val simpleBodyComponent = BodyComponent(32.0f, 32.0f)
         return arrayListOf(
             simpleTransformComponent,
             simpleSpriteComponent,
             simpleStateComponent,
             simpleDynamicComponent,
-            simpleCharacterComponent
+            simpleCharacterComponent,
+            simpleBodyComponent
         )
     }
 
@@ -90,6 +93,7 @@ object SceneRegistry {
         _instance.registerComponent<SpriteComponent>()
         _instance.registerComponent<ProjectileComponent>()
         _instance.registerComponent<WeaponComponent>()
+        _instance.registerComponent<BodyComponent>()
     }
 
     fun loadScene(name: String): Scene {
