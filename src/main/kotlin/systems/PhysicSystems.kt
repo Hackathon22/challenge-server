@@ -42,38 +42,66 @@ class CollisionSystem : System() {
     private val _entityBodies = HashMap<Entity, Body>()
 
     private val _addedEntities = LinkedList<Entity>()
+
     private val _removedEntities = LinkedList<Entity>()
 
-    private val _world = World(Vector2(0.0f, 0.0f), true)
+    private val _world = World(Vector2(0.0f, 0.0f), false)
 
     override fun initializeLogic(vararg arg: Any): Boolean {
-        val contactListener = object : ContactListener {
-            override fun beginContact(contact: Contact) {
-                val bodyA = contact.fixtureA.body
-                val bodyB = contact.fixtureB.body
-                // get entities
-                val bodyToEntities = _entityBodies.entries.associate { (k, v) -> v to k }
-                val entityA = bodyToEntities[bodyA]
-                val entityB = bodyToEntities[bodyB]
+        try {
+            val instance = arg[0] as Instance
+            val contactListener = object : ContactListener {
+                override fun beginContact(contact: Contact) {
+                    val bodyA = contact.fixtureA.body
+                    val bodyB = contact.fixtureB.body
+                    // get entities
+                    val bodyToEntities = _entityBodies.entries.associate { (k, v) -> v to k }
+                    val entityA = bodyToEntities[bodyA]
+                    val entityB = bodyToEntities[bodyB]
 
-                println("Detected contact between entity: $entityA and entity: $entityB")
-                // TODO make event
-            }
+                    if (entityA != null && entityB != null) {
+                        println("Detected contact between entity: $entityA and entity: $entityB")
+                        val transformComponentA = instance.getComponent<TransformComponent>(entityA)
+                        transformComponentA.pos = _entityPositions[entityA]!!
+                        val dynamicComponentA = instance.getComponent<DynamicComponent>(entityA)
+                        dynamicComponentA.speed.x = 0f
+                        dynamicComponentA.speed.y = 0f
 
-            override fun endContact(contact: Contact) {
-            }
+                        val transformComponentB = instance.getComponent<TransformComponent>(entityB)
+                        transformComponentB.pos = _entityPositions[entityB]!!
+                        val dynamicComponentB = instance.getComponent<DynamicComponent>(entityB)
+                        dynamicComponentB.speed.x = 0f
+                        dynamicComponentB.speed.y = 0f
+                        // TODO make event
+                    }
+                }
 
-            override fun preSolve(contact: Contact, oldManifold: Manifold?) {
-            }
+                override fun endContact(contact: Contact) {
+                }
 
-            override fun postSolve(contact: Contact, impulse: ContactImpulse?) {
+                override fun preSolve(contact: Contact, oldManifold: Manifold?) {
+                }
+
+                override fun postSolve(contact: Contact, impulse: ContactImpulse?) {
+                }
             }
+            _world.setContactListener(contactListener)
+            return true
         }
-        _world.setContactListener(contactListener)
-        return true
+        catch (exc: TypeCastException) {
+            return false
+        }
     }
 
     override fun updateLogic(instance: Instance, delta: Float) {
+        _removedEntities.forEach {
+            val body = _entityBodies[it]
+            if (body != null)
+                _world.destroyBody(_entityBodies[it])
+            _entityPositions.remove(it)
+            _entityBodies.remove(it)
+        }
+
         _addedEntities.forEach {
             // adds the entity entry in the position registry
             val transformComponent = instance.getComponent<TransformComponent>(it)
@@ -86,32 +114,31 @@ class CollisionSystem : System() {
 
             // box2d body, defines the object it the world
             val bodyDef = BodyDef()
-            bodyDef.type = BodyDef.BodyType.StaticBody
+            bodyDef.type = BodyDef.BodyType.DynamicBody
+            bodyDef.fixedRotation = true
+            bodyDef.position.set(Vector2(transformComponent.pos.x, transformComponent.pos.y))
 
             // box2d fixture, defines the collision box
             val fixDef = FixtureDef()
 
             // creates a rectangle around the body, the x, y position is on the bottom left
             val shape = PolygonShape()
-            val collisionBox = floatArrayOf(0.0f, 0.0f, 0.0f, height, width, height, width, 0.0f)
-            shape.set(collisionBox)
-            fixDef.shape = shape
+            shape.setAsBox(width / 2.0f, height / 2.0f)
 
+            fixDef.shape = shape
+            fixDef.density = 1.0f
             // adds the body and it's fixture to the world
-            val body = _world.createBody(bodyDef)
-            body.createFixture(fixDef)
+            val body = _world.createBody(bodyDef).createFixture(fixDef).body
+
             _entityBodies[it] = body
         }
+        _addedEntities.clear()
+        _removedEntities.clear()
 
-        _removedEntities.forEach {
-            val body = _entityBodies[it]
-            if (body != null)
-                _world.destroyBody(_entityBodies[it])
-            _entityPositions.remove(it)
-            _entityBodies.remove(it)
-        }
+        // detects collisions, rolling back the current positions
+        _world.step(delta, 6, 2)
 
-        // sets the entity position
+        // saves the entity position
         entities.forEach {
             // sets the body position in the world
             val transformComponent = instance.getComponent<TransformComponent>(it)
@@ -122,10 +149,11 @@ class CollisionSystem : System() {
                 ), transformComponent.rot.z
             )
         }
-        _world.step(delta, 1, 1)
 
-        _addedEntities.clear()
-        _removedEntities.clear()
+        entities.forEach {
+            val transformComponent = instance.getComponent<TransformComponent>(it)
+            _entityPositions[it] = transformComponent.pos
+        }
     }
 
     override fun onEntityAdded(entity: Entity) {

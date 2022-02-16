@@ -46,7 +46,7 @@ class CameraSystem : System() {
     }
 
     override fun onEntityAdded(entity: Entity) {
-        assert(_cameraID != null) { "Only one camera is supported at the moment " }
+//        assert(_cameraID != null) { "Only one camera is supported at the moment " }
         _cameraID = entity
     }
 

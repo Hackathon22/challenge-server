@@ -68,7 +68,7 @@ open class ClientSession(private val sceneName : String? = "baseScene") : Applic
         movementSignature.set(_instance.getComponentType<DynamicComponent>(), true)
         _instance.setSystemSignature<MovementSystem>(movementSignature)
 
-        _collisionSystem.initialize()
+        _collisionSystem.initialize(_instance)
         val collisionSignature = Signature()
         collisionSignature.set(_instance.getComponentType<TransformComponent>(), true)
         collisionSignature.set(_instance.getComponentType<BodyComponent>(), true)

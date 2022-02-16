@@ -118,7 +118,7 @@ object SceneRegistry {
         EntityRegistry.loadEntity("baseRocketLauncher").forEach {
             _instance.addComponentDynamic(simpleEntity, it)
         }
-        _instance.getComponent<TransformComponent>(simpleEntity).pos.x = 0f
+        _instance.getComponent<TransformComponent>(simpleEntity).pos.x = -100.0f
         _instance.getComponent<TransformComponent>(simpleEntity).pos.y = 0f
         _instance.getComponent<TransformComponent>(simpleEntity).rot.z = 45.0f
 

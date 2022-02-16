@@ -60,7 +60,7 @@ class SystemManager {
     }
 
     internal inline fun <reified T: System> getSystem() : T {
-        assert(_systemMap[T::class] == null)
+        assert(_systemMap[T::class] != null)
         return (_systemMap[T::class] as T?)!!
     }
 
