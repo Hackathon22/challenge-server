@@ -40,6 +40,7 @@ class WeaponSystem : System() {
 
         // transform component, giving the position of the player + 10 pixels
         val transformComponent = TransformComponent()
+
         transformComponent.pos.x =
             entityTransformComponent.pos.x + 10 * cosDeg(shooterAngle)
         transformComponent.pos.y =

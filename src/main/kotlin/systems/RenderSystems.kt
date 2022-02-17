@@ -1,6 +1,7 @@
 package systems
 
 import com.badlogic.gdx.graphics.OrthographicCamera
+import com.badlogic.gdx.graphics.g2d.Sprite
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.utils.ScreenUtils
@@ -85,19 +86,12 @@ class SpriteRenderSystem : System() {
             val spriteComponent = instance.getComponent<SpriteComponent>(it)
             val transformComponent = instance.getComponent<TransformComponent>(it)
             val texture = SpriteRegister.getSprite(spriteComponent.sprite)
-            val region = TextureRegion(texture)
-            _spriteBatch?.draw(
-                region,
-                transformComponent.pos.x - (texture.width.toFloat() / 2f),
-                transformComponent.pos.y - (texture.height.toFloat() / 2f),
-                0f,
-                0f,
-                texture.width.toFloat(),
-                texture.height.toFloat(),
-                transformComponent.scale.x,
-                transformComponent.scale.y,
-                transformComponent.rot.z
-            )
+
+            val sprite = Sprite(texture)
+            sprite.setOrigin(texture.width.toFloat() / 2f, texture.height.toFloat() / 2f)
+            sprite.rotate(transformComponent.rot.z)
+            sprite.setPosition(transformComponent.pos.x, transformComponent.pos.y)
+            sprite.draw(_spriteBatch)
         }
 
         _spriteBatch?.end()
