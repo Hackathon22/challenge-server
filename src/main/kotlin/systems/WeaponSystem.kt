@@ -118,7 +118,7 @@ class ProjectileSystem : System() {
             if (collidedCharacter != null) {
                 explode(it.first, instance)
                 toRemoveEntities.add(it.first)
-                return
+                return@forEach
             }
 
             // reduces the bounces
@@ -129,7 +129,9 @@ class ProjectileSystem : System() {
             } else bounce(it.first, instance, it.third)
         }
 
-        toRemoveEntities.forEach { instance.destroyEntity(it) }
+        toRemoveEntities.forEach {
+            instance.destroyEntity(it)
+        }
         _collidedEntities.clear()
     }
 

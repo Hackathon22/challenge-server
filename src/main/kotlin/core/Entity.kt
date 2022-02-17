@@ -57,6 +57,6 @@ class EntityManager {
     fun getSignature(entity: Entity) : Signature = _entitySignature[entity]
 
     fun hasEntity(entity: Entity) : Boolean {
-        return _indexCounter.peekElement() < entity
+        return _indexCounter.peekElement() > entity
     }
 }

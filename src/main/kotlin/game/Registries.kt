@@ -63,7 +63,7 @@ object EntityRegistry {
         )
         val projectileInfo = ProjectileInfo(
             width = 32.0f,
-            height = 16.0f,
+            height = 32.0f,
             maxSpeed = 400.0f,
             maxBounces = 2,
             maxTime = 5.0f  // maximum two seconds
