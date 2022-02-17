@@ -22,6 +22,8 @@ data class ImpactInfo(
 data class ExplosionInfo(val explosionRadius: Float)
 
 data class ProjectileInfo(
+    val width: Float,
+    val height: Float,
     val maxSpeed: Float,
     val maxBounces: Int,
     val maxTime: Float

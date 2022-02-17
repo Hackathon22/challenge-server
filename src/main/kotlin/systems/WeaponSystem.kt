@@ -42,9 +42,9 @@ class WeaponSystem : System() {
         val transformComponent = TransformComponent()
 
         transformComponent.pos.x =
-            entityTransformComponent.pos.x + 10 * cosDeg(shooterAngle)
+            entityTransformComponent.pos.x + 32 * cosDeg(shooterAngle)
         transformComponent.pos.y =
-            entityTransformComponent.pos.y + 10 * sinDeg(shooterAngle)
+            entityTransformComponent.pos.y + 32 * sinDeg(shooterAngle)
 
         transformComponent.rot.z = shooterAngle
 
@@ -53,12 +53,17 @@ class WeaponSystem : System() {
         dynamicComponent.speed.x = entityWeaponComponent.projectile.maxSpeed * cosDeg(shooterAngle)
         dynamicComponent.speed.y = entityWeaponComponent.projectile.maxSpeed * sinDeg(shooterAngle)
 
-        // projectile component, containing all the
+        // projectile component, containing all the projectile information
         val projectileComponent = ProjectileComponent(
             entityWeaponComponent.projectile.maxBounces,
             entityWeaponComponent.projectile.maxTime,
             entityWeaponComponent.impact.copy(),
             entityWeaponComponent.projectile.copy()
+        )
+
+        val bodyComponent = BodyComponent(
+            entityWeaponComponent.projectile.width,
+            entityWeaponComponent.projectile.height
         )
 
         val spriteComponent = SpriteComponent(entityWeaponComponent.projectileSprite)
@@ -68,6 +73,7 @@ class WeaponSystem : System() {
         instance.addComponent(projectile, dynamicComponent)
         instance.addComponent(projectile, projectileComponent)
         instance.addComponent(projectile, spriteComponent)
+        instance.addComponent(projectile, bodyComponent)
 
         return entityWeaponComponent.coolDown
     }
@@ -101,13 +107,14 @@ class ProjectileSystem : System() {
                 toRemoveEntities.add(it)
             }
         }
-       _collidedEntities.forEach {
+        _collidedEntities.forEach {
             // get the projectile's component, if it still exists
             val projectileComponent =
                 instance.getComponentDynamicUnsafe(it.first, ProjectileComponent::class) ?: return
 
             // checks if the projectile collided with a character
-            val collidedCharacter = instance.getComponentDynamicUnsafe(it.second, CharacterComponent::class)
+            val collidedCharacter =
+                instance.getComponentDynamicUnsafe(it.second, CharacterComponent::class)
             if (collidedCharacter != null) {
                 explode(it.first, instance)
                 toRemoveEntities.add(it.first)
@@ -119,8 +126,7 @@ class ProjectileSystem : System() {
             if ((projectileComponent as ProjectileComponent).remainingBounces < 0) {
                 explode(it.first, instance)
                 toRemoveEntities.add(it.first)
-            }
-            else bounce(it.first, instance, it.third)
+            } else bounce(it.first, instance, it.third)
         }
 
         toRemoveEntities.forEach { instance.destroyEntity(it) }
