@@ -2,12 +2,10 @@ package game
 
 import com.badlogic.gdx.ApplicationAdapter
 import com.badlogic.gdx.Gdx
-import com.badlogic.gdx.physics.box2d.Body
 import com.esotericsoftware.kryonet.Client
 import components.*
 import core.*
 import net.ClientStatus
-import org.lwjgl.Sys
 import render.SpriteRegister
 import systems.*
 import java.util.concurrent.atomic.AtomicBoolean
@@ -96,7 +94,7 @@ open class ClientSession(private val sceneName : String? = "baseScene") : Applic
 
         // sets observers on non-graphical systems
         _collisionSystem.addObserver(_projectileSystem)  // bullet collision
-
+        _collisionSystem.addObserver(_stateSystem)  // state change
     }
 
     override fun create() {
@@ -144,7 +142,7 @@ open class ClientSession(private val sceneName : String? = "baseScene") : Applic
     }
 
     override fun resize(width: Int, height: Int) {
-        notifyObservers(WindowResizeEvent(Vec2F(width.toFloat(), height.toFloat())))
+        notifyObservers(WindowResizeEvent(Vec2F(width.toFloat(), height.toFloat())), _instance)
     }
 
     override fun render() {

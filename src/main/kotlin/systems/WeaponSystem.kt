@@ -71,7 +71,7 @@ class WeaponSystem : System() {
         return entityWeaponComponent.coolDown
     }
 
-    override fun onEvent(event: Event, observable: IObservable) {
+    override fun onEvent(event: Event, observable: IObservable, instance: Instance) {
     }
 }
 
@@ -146,7 +146,7 @@ class ProjectileSystem : System() {
         // TODO implement bounce by changing the dynamic component
     }
 
-    override fun onEvent(event: Event, observable: IObservable) {
+    override fun onEvent(event: Event, observable: IObservable, instance: Instance) {
         if (event is CollisionEvent) {
             if (event.entity in entities) {
                 _collidedEntities.add(Triple(event.entity, event.collidedEntity, event.angle))

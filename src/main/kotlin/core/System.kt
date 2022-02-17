@@ -37,7 +37,7 @@ abstract class System(override val observers: ArrayList<IObserver> = ArrayList()
         onEntityRemoved(entity)
     }
 
-    override fun onEvent(event: Event, observable: IObservable) {
+    override fun onEvent(event: Event, observable: IObservable, instance: Instance) {
         // Does nothing by default, needs to be overwritten
     }
 }

@@ -30,7 +30,7 @@ abstract class InputEvent : Event()
 data class WindowResizeEvent(val newSize: Vec2F) : ValueChangedEvent("windowSize", newSize)
 
 interface IObserver {
-    fun onEvent(event: Event, observable: IObservable)
+    fun onEvent(event: Event, observable: IObservable, instance: Instance)
 }
 
 interface IObservable {
@@ -44,8 +44,8 @@ interface IObservable {
         observers.remove(observer)
     }
 
-    fun notifyObservers(event: Event) {
-        observers.forEach { it.onEvent(event, this) }
+    fun notifyObservers(event: Event, instance: Instance) {
+        observers.forEach { it.onEvent(event, this, instance) }
     }
 
 }

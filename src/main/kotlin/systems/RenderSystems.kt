@@ -8,7 +8,6 @@ import components.SpriteComponent
 import components.TransformComponent
 import core.*
 import render.SpriteRegister
-import java.lang.Math.PI
 
 class CameraSystem : System() {
 
@@ -56,7 +55,7 @@ class CameraSystem : System() {
         }
     }
 
-    override fun onEvent(event: Event, observable: IObservable) {
+    override fun onEvent(event: Event, observable: IObservable, instance: Instance) {
         if (event is WindowResizeEvent) {
             camera.setToOrtho(false, event.newSize.x, event.newSize.y)
         }
@@ -89,8 +88,8 @@ class SpriteRenderSystem : System() {
             val region = TextureRegion(texture)
             _spriteBatch?.draw(
                 region,
-                transformComponent.pos.x - texture.width.toFloat() / 2f,
-                transformComponent.pos.y - texture.height.toFloat() / 2f,
+                transformComponent.pos.x - (texture.width.toFloat() / 2f),
+                transformComponent.pos.y - (texture.height.toFloat() / 2f),
                 0f,
                 0f,
                 texture.width.toFloat(),

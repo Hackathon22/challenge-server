@@ -108,6 +108,10 @@ private class MovingState(private var _direction: Vec3F, entity: Entity) : State
         if (event is HitEvent) {
             return HitState(event.duration, event.entity)
         }
+        if (event is CollisionEvent) {
+            if (event.entity == _entity || event.collidedEntity == _entity)
+                return IdleState(_entity)
+        }
         return null
     }
 
@@ -216,7 +220,7 @@ private class HitState(private var _duration: Float, entity: Entity) : State(ent
 
 class StateSystem : System() {
 
-    private val entityStates = HashMap<Entity, State>()
+    private val _entityStates = HashMap<Entity, State>()
 
     override fun initializeLogic(vararg arg: Any): Boolean {
         return true
@@ -229,33 +233,41 @@ class StateSystem : System() {
             while (commandIterator.hasNext()) {
                 val cmd = commandIterator.next()
                 if (cmd is StateCommand || cmd is CursorMovedCommand) {
-                    val newState = entityStates[entity]!!.onCommand(instance, cmd)
+                    val newState = _entityStates[entity]!!.onCommand(instance, cmd)
                     commandIterator.remove()
                     if (newState != null) changeState(instance, newState, entity)
                 }
             }
-            val newState = entityStates[entity]!!.update(instance, delta)
+            val newState = _entityStates[entity]!!.update(instance, delta)
             if (newState != null) changeState(instance, newState, entity)
         }
     }
 
     override fun onEntityAdded(entity: Entity) {
-        entityStates[entity] = IdleState(entity)
+        _entityStates[entity] = IdleState(entity)
     }
 
     override fun onEntityRemoved(entity: Entity) {
-        entityStates.remove(entity)
+        _entityStates.remove(entity)
     }
 
-    override fun onEvent(event: Event, observable: IObservable) {
+    override fun onEvent(event: Event, observable: IObservable, instance: Instance) {
         if (event is EntityEvent) {
-            entityStates[event.entity]?.onEvent(event)
+            val newState = _entityStates[event.entity]?.onEvent(event)
+            if (newState != null) changeState(instance, newState, event.entity)
+        }
+        if (event is CollisionEvent) {
+            var newState = _entityStates[event.entity]?.onEvent(event)
+            if (newState != null) changeState(instance, newState, event.entity)
+
+            newState = _entityStates[event.collidedEntity]?.onEvent(event)
+            if (newState != null) changeState(instance, newState, event.collidedEntity)
         }
     }
 
     private fun changeState(instance: Instance, state: State, entity: Entity) {
-        entityStates[entity]?.onStateEnd(instance)
-        entityStates[entity] = state
-        entityStates[entity]?.onStateBegin(instance)
+        _entityStates[entity]?.onStateEnd(instance)
+        _entityStates[entity] = state
+        _entityStates[entity]?.onStateBegin(instance)
     }
 }
