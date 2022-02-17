@@ -142,7 +142,7 @@ class CollisionSystem : System() {
                 Vector2(
                     transformComponent.pos.x,
                     transformComponent.pos.y
-                ), 0.0f
+                ), transformComponent.rot.z * (PI.toFloat() / 180f)
             )
         }
 
