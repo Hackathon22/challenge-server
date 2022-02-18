@@ -11,9 +11,6 @@ import kotlin.math.sign
 
 private abstract class State(protected val _entity: Entity) {
 
-    private val eventQueue = LinkedList<Event>();
-    private val commandQueue = LinkedList<Command>();
-
     abstract val state: States
 
     abstract fun update(instance: Instance, delta: Float): State?
@@ -116,14 +113,12 @@ private class MovingState(private var _direction: Vec3F, entity: Entity) : State
     }
 
     fun changeDirection(instance: Instance, direction: Vec3F): State? {
-        if (sign(_direction.x) != sign(direction.x)) _direction.x += direction.x
-        else _direction.x = direction.x
+        if (_direction != direction) {
+            _direction = direction
 
-        if (sign(_direction.y) != sign(direction.y)) _direction.y += direction.y
-        else _direction.y = direction.y
-
-        applyDirection(instance)
-        if (_direction.x == 0f && _direction.y == 0f && _direction.z == 0f) return IdleState(_entity)
+            applyDirection(instance)
+            if (_direction.x == 0f && _direction.y == 0f && _direction.z == 0f) return IdleState(_entity)
+        }
         return null
     }
 
@@ -144,7 +139,6 @@ private class MovingState(private var _direction: Vec3F, entity: Entity) : State
     }
 
     override fun onStateEnd(instance: Instance) {
-        _direction = Vec3F(0.0f, 0.0f, 0.0f)
         changeDirection(instance, Vec3F(0.0f, 0.0f, 0.0f))
     }
 }

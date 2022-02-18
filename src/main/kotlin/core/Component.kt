@@ -1,6 +1,7 @@
 package core
 
 import java.util.*
+import kotlin.collections.ArrayList
 import kotlin.reflect.KClass
 
 typealias Index = Int
@@ -18,7 +19,8 @@ interface IComponentArray {
 
 class ComponentArray<T : IComponent> : IComponentArray {
 
-    private val _componentArray = ArrayList<T>()
+    private val _componentArray = ArrayList<T?>(MAX_ENTITIES)
+//    private val _componentArray : Array<T?> = arrayOfNulls<Any?>(MAX_ENTITIES) as Array<T?>
 
     private val _entityToIndex = HashMap<Entity, Index>()
 
@@ -26,14 +28,23 @@ class ComponentArray<T : IComponent> : IComponentArray {
 
     private var _indexCounter = 0
 
+    init {
+        for (i in 0 until MAX_ENTITIES) {
+            _componentArray.add(null)
+        }
+    }
+
     fun insertData(entity: Entity, component: IComponent) {
+        if (_entityToIndex[entity] != null)
+            return
         assert(_entityToIndex[entity] == null)
 
         val newIndex = _indexCounter
         _entityToIndex[entity] = newIndex
         _indexToEntity[newIndex] = entity
 
-        _componentArray.add(component as T)
+        @Suppress("UNCHECKED_CAST")
+        _componentArray[newIndex] = component as T
 
         _indexCounter++
     }
@@ -51,13 +62,13 @@ class ComponentArray<T : IComponent> : IComponentArray {
 
         _entityToIndex.remove(entity)
         _indexToEntity.remove(indexOfLastElement)
-        _componentArray.removeAt(indexOfLastElement)
+        _componentArray[indexOfLastElement] = null
         _indexCounter--
 }
 
     fun getData(entity: Entity) : T {
         assert(_entityToIndex[entity] != null)
-        return _componentArray[_entityToIndex[entity]!!]
+        return _componentArray[_entityToIndex[entity]!!] as T
     }
 
     fun getDataUnsafe(entity: Entity) : T? {

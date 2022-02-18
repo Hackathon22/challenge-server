@@ -6,7 +6,6 @@ import com.badlogic.gdx.InputProcessor
 import com.badlogic.gdx.math.Vector3
 import components.*
 import core.*
-import java.util.*
 import java.util.concurrent.LinkedBlockingQueue
 
 class InputSystem : System(), InputProcessor {
@@ -14,6 +13,8 @@ class InputSystem : System(), InputProcessor {
     private val _queue = LinkedBlockingQueue<Command>()
 
     private val _mouseQueue = LinkedBlockingQueue<Pair<Int, Int>>()
+
+    private var _lastDirection = Vec3F(0f, 0f, 0f)
 
     override fun initializeLogic(vararg arg: Any): Boolean {
         Gdx.input.inputProcessor = this
@@ -43,6 +44,14 @@ class InputSystem : System(), InputProcessor {
             _queue.add(cursorMoved)
         }
 
+        // get direction (easier to handle in the loop than from events)
+        val currentDirection = processDirectionKey()
+        _queue.add(MoveCommand(currentDirection))
+//        if (currentDirection != _lastDirection) {
+//            _queue.add(MoveCommand(currentDirection))
+//            _lastDirection = currentDirection
+//        }
+
         // adds the commands to each component if they match the controller type
         entities.forEach {
             val commandComponent = instance.getComponent<CommandComponent>(it)
@@ -64,18 +73,6 @@ class InputSystem : System(), InputProcessor {
     @Suppress("DuplicatedCode")
     override fun keyDown(keycode: Int): Boolean {
         when (keycode) {
-            Input.Keys.UP -> {
-                _queue.add(MoveCommand(Vec3F(0f, 1f, 0f)))
-            }
-            Input.Keys.DOWN -> {
-                _queue.add(MoveCommand(Vec3F(0f, -1f, 0f)))
-            }
-            Input.Keys.LEFT -> {
-                _queue.add(MoveCommand(Vec3F(-1f, 0f, 0f)))
-            }
-            Input.Keys.RIGHT -> {
-                _queue.add(MoveCommand(Vec3F(1f, 0f, 0f)))
-            }
             Input.Keys.SPACE -> {
                 _queue.add(ShootCommand())
             }
@@ -85,21 +82,24 @@ class InputSystem : System(), InputProcessor {
 
     @Suppress("DuplicatedCode")
     override fun keyUp(keycode: Int): Boolean {
-        when (keycode) {
-            Input.Keys.UP -> {
-                _queue.add(MoveCommand(Vec3F(0f, -1f, 0f), release = true))
-            }
-            Input.Keys.DOWN -> {
-                _queue.add(MoveCommand(Vec3F(0f, 1f, 0f), release = true))
-            }
-            Input.Keys.LEFT -> {
-                _queue.add(MoveCommand(Vec3F(1f, 0f, 0f), release = true))
-            }
-            Input.Keys.RIGHT -> {
-                _queue.add(MoveCommand(Vec3F(-1f, 0f, 0f), release = true))
-            }
-        }
         return true
+    }
+
+    private fun processDirectionKey() : Vec3F {
+        val direction = Vec3F(0f, 0f, 0f)
+        if (Gdx.input.isKeyPressed(Input.Keys.UP)) {
+            direction.y += 1f
+        }
+        if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
+            direction.y -= 1f
+        }
+        if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
+            direction.x -= 1f
+        }
+        if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
+            direction.x += 1f
+        }
+        return direction
     }
 
     override fun keyTyped(character: Char): Boolean = true

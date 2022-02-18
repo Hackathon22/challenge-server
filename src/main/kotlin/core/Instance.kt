@@ -8,24 +8,16 @@ class Instance {
     private val _componentManager = ComponentManager()
     private val _entityManager = EntityManager()
     private val _systemManager = SystemManager()
-    private val entities = ArrayList<Entity>()
 
-    private val deletedEntities = ArrayList<Entity>()
-    private val addedEntities = ArrayList<Entity>()
 
     fun createEntity(): Entity {
-        val entity = _entityManager.createEntity()
-        entities.add(entity)
-        return entity
+        return _entityManager.createEntity()
     }
 
     fun destroyEntity(entity: Entity) {
-        if (_entityManager.hasEntity(entity)) {
-            _entityManager.destroyEntity(entity)
-            _componentManager.entityDestroyed(entity)
-            _systemManager.entityDestroyed(entity)
-            entities.remove(entity)
-        }
+        _entityManager.destroyEntity(entity)
+        _componentManager.entityDestroyed(entity)
+        _systemManager.entityDestroyed(entity)
     }
 
     internal inline fun <reified T : IComponent> registerComponent() {
@@ -92,27 +84,6 @@ class Instance {
             if (component != null) components.add(component)
         }
         return components
-    }
-
-    fun createComponentMap() : Scene {
-        val scene = Scene()
-        for (entity in 0 until entities.size) {
-            scene[entity] = ArrayList()
-            for (componentClass in _componentManager.registeredComponents()) {
-                val component = _componentManager.getComponentDynamicUnsafe(entity, componentClass)
-                if (component != null) scene[entity]!!.add(component)
-            }
-        }
-        return scene
-    }
-
-    fun loadComponentMap(scene : Scene) {
-        scene.forEach { (_, components) ->
-            val entity = createEntity()
-            components.forEach{
-                addComponentDynamic(entity, it)
-            }
-        }
     }
 
     internal inline fun <reified T: System> getSystem() : T {

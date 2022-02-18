@@ -4,59 +4,40 @@ import java.util.*
 
 typealias Entity = Int
 
+const val MAX_ENTITIES = 10000
+
 class EntityManager {
+    private val _availableEntities = LinkedList<Entity>()
+    private val _signatures = Array(MAX_ENTITIES) { Signature() }
+    private var _entityCount = 0
 
-    class IdCounter {
-        private var totalElements = 0
-        private val holeQueue : Queue<Int> = LinkedList<Int>()
-
-        fun nextElement() : Int {
-            var element = totalElements
-            if (holeQueue.size > 0) {
-                element = holeQueue.poll()
-            }
-            totalElements++
-            return element
-        }
-
-        fun deleteElement(element: Int) {
-            totalElements--
-            holeQueue.add(element)
-        }
-
-        fun peekElement() : Int {
-            if (holeQueue.size > 0)
-                return holeQueue.peek()
-            return totalElements
-        }
+    init {
+        for (i in MAX_ENTITIES - 1 downTo 0) _availableEntities.push(i)
     }
 
-    private val _indexCounter = IdCounter()
-    private val _entitySignature = ArrayList<Signature>()
-
     fun createEntity() : Entity {
-        val entity = _indexCounter.nextElement()
-        if (_entitySignature.size <= entity) {
-            _entitySignature.add(Signature(maxComponentTypes))
-        }
-        else {
-            _entitySignature[entity] = Signature(maxComponentTypes)
-        }
+        assert(_entityCount < MAX_ENTITIES) { "Too many entities in game." }
+        val entity = _availableEntities.pop()
+        _entityCount++
+
         return entity
     }
 
     fun destroyEntity(entity: Entity) {
-        _indexCounter.deleteElement(entity)
-        _entitySignature[entity] = Signature()
+        assert(_entityCount < MAX_ENTITIES) { "Invalid entity ID: $entity (out of range)"}
+        _signatures[entity].clear()
+        _availableEntities.push(entity)
+        _entityCount--
     }
 
     fun setSignature(entity: Entity, signature: Signature) {
-        _entitySignature[entity] = signature
+        assert(entity < MAX_ENTITIES) { "Invalid entity ID: $entity (out of range)" }
+        _signatures[entity] = signature
     }
 
-    fun getSignature(entity: Entity) : Signature = _entitySignature[entity]
-
-    fun hasEntity(entity: Entity) : Boolean {
-        return _indexCounter.peekElement() > entity
+    fun getSignature(entity: Entity) : Signature {
+        assert(entity < MAX_ENTITIES) { "Invalid entity ID: $entity (out of range)" }
+        return _signatures[entity]
     }
+
 }
