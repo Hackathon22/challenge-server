@@ -44,6 +44,8 @@ data class Vec3I(var x: Int, var y: Int, var z: Int) {
 
 data class Vec3F(var x: Float, var y: Float, var z: Float) {
 
+    constructor(other: Vec3F) : this(other.x, other.y, other.z)
+
     operator fun plus(vec: Vec3F) = Vec3F(x + vec.x, y + vec.y, z + vec.z)
 
     operator fun minus(vec: Vec3F) = Vec3F(x - vec.x, y - vec.y, z - vec.z)
@@ -57,5 +59,12 @@ data class Vec3F(var x: Float, var y: Float, var z: Float) {
     fun normalized() : Vec3F {
         val norm = sqrt(x * x + y * y + z * z)
         return if (norm != 0f) Vec3F(x / norm, y / norm, z / norm) else Vec3F(0f, 0f, 0f)
+    }
+
+    fun set(other: Vec3F) : Vec3F {
+        x = other.x
+        y = other.y
+        z = other.z
+        return this
     }
 }

@@ -61,9 +61,15 @@ class CollisionSystem : System() {
                         println("$entityA - $entityB")
                         // rolling back entity position to last non colliding position
                         val transformComponentA = instance.getComponent<TransformComponent>(entityA)
-                        transformComponentA.pos = _entityPositions[entityA]!!
+                        println("Pre-collision X: ${_entityPositions[entityA]!!.x}, Current X: ${transformComponentA.pos.x}")
+                        transformComponentA.pos.set(_entityPositions[entityA]!!)
                         val transformComponentB = instance.getComponent<TransformComponent>(entityB)
-                        transformComponentB.pos = _entityPositions[entityB]!!
+                        transformComponentB.pos.set(_entityPositions[entityB]!!)
+
+                        // adds a bounce back from the contact point
+                        val normalVector = Vec3F(contact.worldManifold.normal.x, contact.worldManifold.normal.y, 0f).normalized()
+                        println("Normal collision vector: $normalVector")
+                        // transformComponentA.pos += normalVector * 100.0f
 
                         // notifies listening systems
                         notifyObservers(
@@ -74,33 +80,15 @@ class CollisionSystem : System() {
                 }
 
                 override fun endContact(contact: Contact) {
+                    val entityA = _bodiesToEntities[contact.fixtureA.body]
+                    val entityB = _bodiesToEntities[contact.fixtureB.body]
+                    println("End of contact: $entityA - $entityB")
                 }
 
                 override fun preSolve(contact: Contact, oldManifold: Manifold?) {
                 }
 
                 override fun postSolve(contact: Contact, impulse: ContactImpulse?) {
-                    val entityA = _bodiesToEntities[contact.fixtureA.body]
-                    val entityB = _bodiesToEntities[contact.fixtureB.body]
-
-                    if (entityA != null && entityB != null) {
-                        val transformComponentA = instance.getComponent<TransformComponent>(entityA)
-                        val transformComponentB = instance.getComponent<TransformComponent>(entityB)
-
-                        transformComponentA.pos = _entityPositions[entityA]!!
-                        transformComponentB.pos = _entityPositions[entityB]!!
-
-                        contact.fixtureA.body.setTransform(
-                            transformComponentA.pos.x,
-                            transformComponentA.pos.y,
-                            transformComponentA.rot.z * (PI.toFloat() / 180f)
-                        )
-                        contact.fixtureB.body.setTransform(
-                            transformComponentB.pos.x,
-                            transformComponentB.pos.y,
-                            transformComponentB.rot.z * (PI.toFloat() / 180f)
-                        )
-                    }
                 }
             }
             _world.setContactListener(contactListener)
@@ -122,7 +110,7 @@ class CollisionSystem : System() {
         _addedEntities.forEach {
             // adds the entity entry in the position registry
             val transformComponent = instance.getComponent<TransformComponent>(it)
-            _entityPositions[it] = transformComponent.pos
+            _entityPositions[it] = Vec3F(transformComponent.pos)
 
             // gets the hitbox from the body component
             val bodyComponent = instance.getComponent<BodyComponent>(it)
@@ -143,7 +131,7 @@ class CollisionSystem : System() {
 
             fixDef.shape = shape
             fixDef.isSensor = true // only behaves as a sensor (no knockback on collision)
-            // adds the body and it's fixture to the world
+            // adds the body, and it's fixture to the world
             val body = _world.createBody(bodyDef).createFixture(fixDef).body
 
             body.setTransform(
@@ -167,14 +155,6 @@ class CollisionSystem : System() {
                 transformComponent.pos.y,
                 transformComponent.rot.z * (PI.toFloat() / 180f)
             )
-            // if it is dynamic, set the speed too
-//            val dynamicComponent = instance.getComponentDynamicUnsafe(it, DynamicComponent::class)
-//            if (dynamicComponent is DynamicComponent) {
-//                _entitiesToBodies[it]?.setLinearVelocity(
-//                    dynamicComponent.speed.x,
-//                    dynamicComponent.speed.y
-//                )
-//            }
         }
 
         // detects collisions, rolling back the current positions
@@ -183,7 +163,7 @@ class CollisionSystem : System() {
         entities.forEach {
             // saves the last transform
             val transformComponent = instance.getComponent<TransformComponent>(it)
-            _entityPositions[it] = transformComponent.pos
+            _entityPositions[it]?.set(transformComponent.pos)
         }
     }
 

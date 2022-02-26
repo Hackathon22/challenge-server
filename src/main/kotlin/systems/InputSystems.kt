@@ -47,10 +47,6 @@ class InputSystem : System(), InputProcessor {
         // get direction (easier to handle in the loop than from events)
         val currentDirection = processDirectionKey()
         _queue.add(MoveCommand(currentDirection))
-//        if (currentDirection != _lastDirection) {
-//            _queue.add(MoveCommand(currentDirection))
-//            _lastDirection = currentDirection
-//        }
 
         // adds the commands to each component if they match the controller type
         entities.forEach {

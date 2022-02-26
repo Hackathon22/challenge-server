@@ -10,8 +10,8 @@ public class ClientDesktopLauncher {
         applicationConfiguration.title = "ARSWA";
         applicationConfiguration.width = 1200;
         applicationConfiguration.height = 800;
-        applicationConfiguration.foregroundFPS = 60;
-        applicationConfiguration.backgroundFPS = 60;
+        applicationConfiguration.foregroundFPS = 10;
+        applicationConfiguration.backgroundFPS = 10;
         applicationConfiguration.resizable = false;
 
         ClientSession clientSession = new ClientSession("baseScene");
