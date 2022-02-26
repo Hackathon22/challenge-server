@@ -1,10 +1,11 @@
 package game
 
 import components.*
+import core.Entity
 import core.IComponent
 import core.Instance
+import core.Vec3F
 import parser.Scene
-import systems.CollisionSystem
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
@@ -15,12 +16,36 @@ object EntityRegistry {
         "baseCharacter" to ::baseCharacter,
         "basePlayer" to ::basePlayer,
         "baseCamera" to ::baseCamera,
-        "baseRocketLauncher" to ::baseRocketLauncher
+        "baseRocketLauncher" to ::baseRocketLauncher,
+        "baseWall" to ::baseWall,
+        "baseZone" to ::baseZone
     )
 
     fun loadEntity(name: String): MutableList<IComponent> {
         assert(entityMap[name] != null)
         return entityMap[name]!!()
+    }
+
+    private fun baseZone() : MutableList<IComponent> {
+        val simpleTransformComponent = TransformComponent()
+        val simpleZoneComponent = ZoneComponent(200f, 200f)
+        val simpleSpriteComponent = SpriteComponent("zone", repeat = false)
+        return arrayListOf(
+            simpleTransformComponent,
+            simpleZoneComponent,
+            simpleSpriteComponent
+        )
+    }
+
+    private fun baseWall() : MutableList<IComponent> {
+        val simpleTransformComponent = TransformComponent()
+        val simpleSpriteComponent = SpriteComponent("bricks", repeat = true)
+        val simpleBodyComponent = BodyComponent(32f, 32f)
+        return arrayListOf(
+            simpleTransformComponent,
+            simpleSpriteComponent,
+            simpleBodyComponent
+        )
     }
 
     private fun baseCharacter(): MutableList<IComponent> {
@@ -96,11 +121,29 @@ object SceneRegistry {
         _instance.registerComponent<ProjectileComponent>()
         _instance.registerComponent<WeaponComponent>()
         _instance.registerComponent<BodyComponent>()
+        _instance.registerComponent<ZoneComponent>()
     }
 
     fun loadScene(name: String): Scene {
         assert(sceneMap[name] != null)
         return sceneMap[name]!!()
+    }
+
+    private fun addWall(x: Float, y: Float, width: Float, height: Float) : Entity {
+        val wallEntity = _instance.createEntity()
+        EntityRegistry.loadEntity("baseWall").forEach {
+            _instance.addComponentDynamic(wallEntity, it)
+        }
+        val wallTransformComponent = _instance.getComponent<TransformComponent>(wallEntity)
+        wallTransformComponent.pos.x = x
+        wallTransformComponent.pos.y = y
+        wallTransformComponent.scale.x = width / 32f
+        wallTransformComponent.scale.y = height / 32f
+        val wallBodyComponent = _instance.getComponent<BodyComponent>(wallEntity)
+        wallBodyComponent.height = height
+        wallBodyComponent.width = width
+
+        return wallEntity
     }
 
     private fun baseScene(): Scene {
@@ -112,6 +155,14 @@ object SceneRegistry {
             _instance.addComponentDynamic(cameraEntity, it)
         }
         scene[cameraEntity] = _instance.getAllComponents(cameraEntity)
+
+        val zoneEntity = _instance.createEntity()
+        EntityRegistry.loadEntity("baseZone").forEach {
+            _instance.addComponentDynamic(zoneEntity, it)
+        }
+        val zoneTransformComponent = _instance.getComponent<TransformComponent>(zoneEntity)
+        zoneTransformComponent.pos.set(Vec3F(0f, 0f, 0f))
+        scene[zoneEntity] = _instance.getAllComponents(zoneEntity)
 
         val simpleEntity = _instance.createEntity()
         EntityRegistry.loadEntity("basePlayer").forEach {
@@ -135,6 +186,37 @@ object SceneRegistry {
         }
 
         scene[simpleEntity2] = _instance.getAllComponents(simpleEntity2)
+
+        // scene walls
+        val topWall = addWall(0f, 316f, 664f, 32f)
+        scene[topWall] = _instance.getAllComponents(topWall)
+
+        val bottomWall = addWall(0f, -316f, 664f, 32f)
+        scene[bottomWall] = _instance.getAllComponents(bottomWall)
+
+        val leftWall = addWall(-316f, 0f, 32f, 664f)
+        scene[leftWall] = _instance.getAllComponents(leftWall)
+
+        val rightWall = addWall(316f, 0f, 32f, 664f)
+        scene[rightWall] = _instance.getAllComponents(rightWall)
+
+        val leftCornerTopWall = addWall(-125f, 200f, 182f, 32f)
+        scene[leftCornerTopWall] = _instance.getAllComponents(leftCornerTopWall)
+
+        val leftCornerBottomWall = addWall(-200f, 125f, 32f, 182f)
+        scene[leftCornerBottomWall] = _instance.getAllComponents(leftCornerBottomWall)
+
+        val rightCornerTopWall = addWall(200f, -125f, 32f, 182f)
+        scene[rightCornerTopWall] = _instance.getAllComponents(rightCornerTopWall)
+
+        val rightCornerBottomWall = addWall(125f, -200f, 182f, 32f)
+        scene[rightCornerBottomWall] = _instance.getAllComponents(rightCornerBottomWall)
+
+        val bottomLeftWall = addWall(-150f, -150f, 32f, 32f)
+        scene[bottomLeftWall] = _instance.getAllComponents(bottomLeftWall)
+
+        val topRightWall = addWall(150f, 150f, 32f, 32f)
+        scene[topRightWall] = _instance.getAllComponents(topRightWall)
 
         return scene
     }

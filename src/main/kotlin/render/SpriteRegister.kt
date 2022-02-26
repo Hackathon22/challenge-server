@@ -42,6 +42,9 @@ object SpriteRegister {
         val configuration = XMLObjectReader.readObject<SpriteConfiguration>(configFile)
         configuration.forEach { (name, path) ->
             _textureMap[name] = Texture(path)
+            if (name == "bricks") {
+                _textureMap[name]?.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat)
+            }
         }
         _initialized = true
     }

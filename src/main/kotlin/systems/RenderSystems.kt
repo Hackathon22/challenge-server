@@ -1,12 +1,14 @@
 package systems
 
 import com.badlogic.gdx.graphics.OrthographicCamera
+import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.Sprite
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.utils.ScreenUtils
 import components.SpriteComponent
 import components.TransformComponent
+import components.ZoneComponent
 import core.*
 import render.SpriteRegister
 
@@ -30,8 +32,7 @@ class CameraSystem : System() {
             val height = arg[1] as Int
             camera.setToOrtho(false, width.toFloat(), height.toFloat())
             true
-        }
-        catch (exc: TypeCastException) {
+        } catch (exc: TypeCastException) {
             false
         }
     }
@@ -40,7 +41,11 @@ class CameraSystem : System() {
         assert(entities.size == 1) { "Only one camera is supported at the moment" }
         if (_cameraID != null) {
             val transformComponent = instance.getComponent<TransformComponent>(_cameraID!!)
-            camera.position.set(transformComponent.pos.x, transformComponent.pos.y, transformComponent.pos.z)
+            camera.position.set(
+                transformComponent.pos.x,
+                transformComponent.pos.y,
+                transformComponent.pos.z
+            )
         }
         camera.update()
     }
@@ -65,7 +70,7 @@ class CameraSystem : System() {
 
 class SpriteRenderSystem : System() {
 
-    private var _spriteBatch : SpriteBatch? = null
+    private var _spriteBatch: SpriteBatch? = null
 
     /**
      * Initializes the render system. Returns true if the given parameters are accurate.
@@ -87,11 +92,28 @@ class SpriteRenderSystem : System() {
             val transformComponent = instance.getComponent<TransformComponent>(it)
             val texture = SpriteRegister.getSprite(spriteComponent.sprite)
 
-            val sprite = Sprite(texture)
-            sprite.setOrigin(texture.width.toFloat() / 2f, texture.height.toFloat() / 2f)
-            sprite.rotate(transformComponent.rot.z)
-            sprite.setPosition(transformComponent.pos.x, transformComponent.pos.y)
-            sprite.draw(_spriteBatch)
+            if (spriteComponent.repeat) {
+                val totalWidth = (transformComponent.scale.x * texture.width).toInt()
+                val totalHeight = (transformComponent.scale.y * texture.height).toInt()
+                _spriteBatch?.draw(
+                    texture,
+                    transformComponent.pos.x - totalWidth/2,
+                    transformComponent.pos.y - totalHeight/2,
+                    0,
+                    0,
+                    (transformComponent.scale.x * texture.width).toInt(),
+                    (transformComponent.scale.y * texture.height).toInt()
+                )
+            } else {
+                val sprite = Sprite(texture)
+                val totalWidth = texture.width.toFloat() * transformComponent.scale.x
+                val totalHeight = texture.height.toFloat() * transformComponent.scale.y
+                sprite.setOrigin(totalWidth / 2f, totalHeight / 2f)
+                sprite.rotate(transformComponent.rot.z)
+                sprite.setPosition(transformComponent.pos.x - totalWidth / 2f, transformComponent.pos.y - totalHeight / 2f)
+                sprite.setScale(transformComponent.scale.x, transformComponent.scale.y)
+                sprite.draw(_spriteBatch)
+            }
         }
 
         _spriteBatch?.end()

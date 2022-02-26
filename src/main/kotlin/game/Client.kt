@@ -58,6 +58,7 @@ open class ClientSession(private val sceneName : String? = "baseScene") : Applic
         _instance.registerComponent<WeaponComponent>()
         _instance.registerComponent<ProjectileComponent>()
         _instance.registerComponent<BodyComponent>()
+        _instance.registerComponent<ZoneComponent>()
 
         // initializes non-graphical systems
         _movementSystem.initialize()

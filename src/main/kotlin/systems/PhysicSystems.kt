@@ -41,6 +41,8 @@ class CollisionSystem : System() {
     private val _entitiesToBodies = HashMap<Entity, Body>()
     private val _bodiesToEntities = HashMap<Body, Entity>()
 
+    private val _entityCollided = HashMap<Entity, Boolean>()
+
     private val _entityPositions = HashMap<Entity, Vec3F>()
 
     private val _addedEntities = LinkedList<Entity>()
@@ -71,6 +73,8 @@ class CollisionSystem : System() {
                         println("Normal collision vector: $normalVector")
                         // transformComponentA.pos += normalVector * 100.0f
 
+                        _entityCollided[entityA] = true
+
                         // notifies listening systems
                         notifyObservers(
                             CollisionEvent(entityA, entityB, 0.0f),
@@ -82,6 +86,7 @@ class CollisionSystem : System() {
                 override fun endContact(contact: Contact) {
                     val entityA = _bodiesToEntities[contact.fixtureA.body]
                     val entityB = _bodiesToEntities[contact.fixtureB.body]
+                    _entityCollided[entityA!!] = false
                     println("End of contact: $entityA - $entityB")
                 }
 
@@ -105,6 +110,7 @@ class CollisionSystem : System() {
                 _world.destroyBody(_entitiesToBodies[it])
             _entitiesToBodies.remove(it)
             _bodiesToEntities.remove(body)
+            _entityCollided.remove(it)
         }
 
         _addedEntities.forEach {
@@ -142,6 +148,7 @@ class CollisionSystem : System() {
 
             _entitiesToBodies[it] = body
             _bodiesToEntities[body] = it
+            _entityCollided[it] = false
         }
         _addedEntities.clear()
         _removedEntities.clear()
@@ -162,8 +169,10 @@ class CollisionSystem : System() {
 
         entities.forEach {
             // saves the last transform
-            val transformComponent = instance.getComponent<TransformComponent>(it)
-            _entityPositions[it]?.set(transformComponent.pos)
+            if (!_entityCollided[it]!!) {
+                val transformComponent = instance.getComponent<TransformComponent>(it)
+                _entityPositions[it]?.set(transformComponent.pos)
+            }
         }
     }
 

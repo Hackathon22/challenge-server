@@ -13,5 +13,17 @@
    <string>soldier</string>
    <string>src/main/resources/sprites/soldier.png</string>
   </void>
+  <void method="put">
+   <string>bricks</string>
+   <string>src/main/resources/sprites/bricks.png</string>
+  </void>
+  <void method="put">
+   <string>zone</string>
+   <string>src/main/resources/sprites/zone.png</string>
+  </void>
+  <void method="put">
+   <string>explosion</string>
+   <string>src/main/resources/sprites/explosion.png</string>
+  </void>
  </object>
 </java>
