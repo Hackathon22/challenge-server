@@ -56,13 +56,15 @@ object EntityRegistry {
         val simpleDynamicComponent = DynamicComponent()
         val simpleCharacterComponent = CharacterComponent(100.0f, 200.0f)
         val simpleBodyComponent = BodyComponent(32.0f, 32.0f)
+        val simpleScoreComponent = ScoreComponent()
         return arrayListOf(
             simpleTransformComponent,
             simpleSpriteComponent,
             simpleStateComponent,
             simpleDynamicComponent,
             simpleCharacterComponent,
-            simpleBodyComponent
+            simpleBodyComponent,
+            simpleScoreComponent
         )
     }
 
@@ -122,6 +124,7 @@ object SceneRegistry {
         _instance.registerComponent<WeaponComponent>()
         _instance.registerComponent<BodyComponent>()
         _instance.registerComponent<ZoneComponent>()
+        _instance.registerComponent<ScoreComponent>()
     }
 
     fun loadScene(name: String): Scene {

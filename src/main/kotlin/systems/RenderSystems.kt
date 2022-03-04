@@ -1,16 +1,21 @@
 package systems
 
+import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.files.FileHandle
 import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.graphics.Texture
+import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.g2d.Sprite
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.utils.ScreenUtils
+import components.ScoreComponent
 import components.SpriteComponent
 import components.TransformComponent
 import components.ZoneComponent
 import core.*
 import render.SpriteRegister
+import java.lang.StringBuilder
 
 class CameraSystem : System() {
 
@@ -122,4 +127,42 @@ class SpriteRenderSystem : System() {
     override fun onEntityAdded(entity: Entity) {}
 
     override fun onEntityRemoved(entity: Entity) {}
+}
+
+
+class UISystem : System() {
+
+    private var _spriteBatch: SpriteBatch? = null
+    private var _font: BitmapFont? = null
+
+    override fun initializeLogic(vararg arg: Any): Boolean {
+        _spriteBatch = SpriteBatch()
+        val handler = Gdx.files.internal("")
+        _font = BitmapFont(Gdx.files.internal("src/main/resources/font/arial_narrow_7.ttf"), false)
+        _font?.data?.setScale(.2f)
+        return true
+    }
+
+    override fun updateLogic(instance: Instance, delta: Float) {
+        _spriteBatch?.begin()
+
+        // score entities
+        var counter = 0
+        entities.forEach {
+            val scoreComponent = instance.getComponent<ScoreComponent>(it)
+            val builder = StringBuilder()
+            builder.append("Player: ${scoreComponent.username} - Score: ${scoreComponent.score}")
+            _font?.draw(_spriteBatch!!, builder.toString(), Gdx.graphics.height - 20f, 10f + 100f * counter)
+            counter += 1
+        }
+
+        _spriteBatch?.end()
+    }
+
+    override fun onEntityAdded(entity: Entity) {
+    }
+
+    override fun onEntityRemoved(entity: Entity) {
+    }
+
 }

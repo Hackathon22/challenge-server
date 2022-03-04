@@ -15,7 +15,7 @@ const val DEFAULT_TIMEOUT = 10000
 const val BASE_WIDTH = 1200
 const val BASE_HEIGHT = 800
 
-open class ClientSession(private val sceneName : String? = "baseScene") : ApplicationAdapter(), IObservable {
+open class ClientSession(private val gameTime : Float = 90f, private val sceneName : String? = "baseScene") : ApplicationAdapter(), IObservable {
 
     private val _client = Client()
 
@@ -43,6 +43,10 @@ open class ClientSession(private val sceneName : String? = "baseScene") : Applic
 
     private val _collisionSystem : System = _instance.registerSystem<CollisionSystem>()
 
+    private val _scoreSystem : System = _instance.registerSystem<ScoreSystem>()
+
+    private val _uiSystem : System = _instance.registerSystem<UISystem>()
+
     override val observers = ArrayList<IObserver>()
 
     init {
@@ -59,6 +63,7 @@ open class ClientSession(private val sceneName : String? = "baseScene") : Applic
         _instance.registerComponent<ProjectileComponent>()
         _instance.registerComponent<BodyComponent>()
         _instance.registerComponent<ZoneComponent>()
+        _instance.registerComponent<ScoreComponent>()
 
         // initializes non-graphical systems
         _movementSystem.initialize()
@@ -92,6 +97,15 @@ open class ClientSession(private val sceneName : String? = "baseScene") : Applic
         projectileSignature.set(_instance.getComponentType<TransformComponent>(), true)
         projectileSignature.set(_instance.getComponentType<DynamicComponent>(), true)
         _instance.setSystemSignature<ProjectileSystem>(projectileSignature)
+
+        _scoreSystem.initialize(gameTime)
+        val scoreSignature = Signature() // accepts all kind of entities
+        _instance.setSystemSignature<ScoreSystem>(scoreSignature)
+
+        _uiSystem.initialize()
+        val uiSignature = Signature()
+        uiSignature.set(_instance.getComponentType<ScoreComponent>(), true)
+        _instance.setSystemSignature<UISystem>(uiSignature)
 
         // sets observers on non-graphical systems
         _collisionSystem.addObserver(_projectileSystem)  // bullet collision
@@ -159,6 +173,9 @@ open class ClientSession(private val sceneName : String? = "baseScene") : Applic
         _collisionSystem.update(_instance, deltaTime)
 
         _projectileSystem.update(_instance, deltaTime)
+
+        // rule systems
+        _scoreSystem.update(_instance, deltaTime)
 
         // render systems
         _cameraSystem.update(_instance, deltaTime)
