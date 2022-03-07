@@ -20,6 +20,8 @@ class ScoreSystem : System() {
 
     private val _removedEntities = LinkedList<Entity>()
 
+    private var _endOfGame = false
+
     override fun initializeLogic(vararg arg: Any): Boolean {
         if (arg.isEmpty()) return false
         return try {
@@ -73,11 +75,15 @@ class ScoreSystem : System() {
 
         _gameTime -= delta
         if (_gameTime <= 0f) {
-            println("End of the game") // TODO: Compute score and give winner
-            _playerEntities.forEach {
-                val scoreComponent = instance.getComponent<ScoreComponent>(it)
-                println("Player ${scoreComponent.username} - Score: ${scoreComponent.score}")
+            if (!_endOfGame) {
+                println("End of the game") // TODO: Compute score and give winner
+                _playerEntities.forEach {
+                    val scoreComponent = instance.getComponent<ScoreComponent>(it)
+                    scoreComponent.gameOn = false
+                    println("Player ${scoreComponent.username} - Score: ${scoreComponent.score}")
+                }
             }
+            _endOfGame = true
         }
     }
 

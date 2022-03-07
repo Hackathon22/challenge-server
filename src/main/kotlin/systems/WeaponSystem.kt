@@ -146,7 +146,6 @@ class ProjectileSystem : System() {
      * Projectile explosion on other entities.
      */
     private fun explode(entity: Entity, instance: Instance) {
-        println("Explode called")
         // projectile's position
         val projectileTransformComponent = instance.getComponent<TransformComponent>(entity)
 
@@ -162,7 +161,7 @@ class ProjectileSystem : System() {
         explosionTransformComponent.pos.set(projectileTransformComponent.pos)
 
         // implements damage, take all the players and computes from the radius
-        // TODO
+
     }
 
     private fun bounce(entity: Entity, instance: Instance, angle: Float) {

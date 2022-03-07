@@ -21,6 +21,7 @@ class TimerSystem : System() {
         entitiesToDestroy.forEach {
             instance.destroyEntity(it)
         }
+        
     }
 
     override fun onEntityAdded(entity: Entity) {
