@@ -8,7 +8,9 @@ import core.*
 import net.ClientStatus
 import render.SpriteRegister
 import systems.*
+import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.collections.ArrayList
 
 const val DEFAULT_TIMEOUT = 10000
 
@@ -47,6 +49,8 @@ open class ClientSession(private val gameTime : Float = 90f, private val sceneNa
 
     private val _uiSystem : System = _instance.registerSystem<UISystem>()
 
+    private val _timerSystem : System = _instance.registerSystem<TimerSystem>()
+
     override val observers = ArrayList<IObserver>()
 
     init {
@@ -64,6 +68,7 @@ open class ClientSession(private val gameTime : Float = 90f, private val sceneNa
         _instance.registerComponent<BodyComponent>()
         _instance.registerComponent<ZoneComponent>()
         _instance.registerComponent<ScoreComponent>()
+        _instance.registerComponent<TimerComponent>()
 
         // initializes non-graphical systems
         _movementSystem.initialize()
@@ -101,6 +106,11 @@ open class ClientSession(private val gameTime : Float = 90f, private val sceneNa
         _scoreSystem.initialize(gameTime)
         val scoreSignature = Signature() // accepts all kind of entities
         _instance.setSystemSignature<ScoreSystem>(scoreSignature)
+
+        _timerSystem.initialize()
+        val timerSignature = Signature()
+        timerSignature.set(_instance.getComponentType<TimerComponent>(), true)
+        _instance.setSystemSignature<TimerSystem>(timerSignature)
 
         // sets observers on non-graphical systems
         _collisionSystem.addObserver(_projectileSystem)  // bullet collision
@@ -164,6 +174,9 @@ open class ClientSession(private val gameTime : Float = 90f, private val sceneNa
         val deltaTime = Gdx.graphics.deltaTime
         // get inputs
         _inputSystem.update(_instance, deltaTime)
+
+        // simulate timer
+        _timerSystem.update(_instance, deltaTime)
 
         // simulate player state
         _stateSystem.update(_instance, deltaTime)

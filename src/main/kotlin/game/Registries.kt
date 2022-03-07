@@ -18,7 +18,8 @@ object EntityRegistry {
         "baseCamera" to ::baseCamera,
         "baseRocketLauncher" to ::baseRocketLauncher,
         "baseWall" to ::baseWall,
-        "baseZone" to ::baseZone
+        "baseZone" to ::baseZone,
+        "baseExplosion" to ::baseExplosion
     )
 
     fun loadEntity(name: String): MutableList<IComponent> {
@@ -97,6 +98,13 @@ object EntityRegistry {
         )
         return arrayListOf(WeaponComponent(impactInfo, projectileInfo, 0.5f, "rocket"))
     }
+
+    private fun baseExplosion() : MutableList<IComponent> {
+        val transformComponent = TransformComponent()
+        val spriteComponent = SpriteComponent("explosion")
+        val timerComponent = TimerComponent(.5f)
+        return arrayListOf(transformComponent, spriteComponent, timerComponent)
+    }
 }
 
 /**
@@ -125,6 +133,7 @@ object SceneRegistry {
         _instance.registerComponent<BodyComponent>()
         _instance.registerComponent<ZoneComponent>()
         _instance.registerComponent<ScoreComponent>()
+        _instance.registerComponent<TimerComponent>()
     }
 
     fun loadScene(name: String): Scene {

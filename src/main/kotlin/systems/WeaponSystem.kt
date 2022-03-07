@@ -3,6 +3,7 @@ package systems
 import com.badlogic.gdx.math.MathUtils.*
 import components.*
 import core.*
+import game.EntityRegistry
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -145,7 +146,23 @@ class ProjectileSystem : System() {
      * Projectile explosion on other entities.
      */
     private fun explode(entity: Entity, instance: Instance) {
-        // TODO implement damage
+        println("Explode called")
+        // projectile's position
+        val projectileTransformComponent = instance.getComponent<TransformComponent>(entity)
+
+        // adds an explosion entity
+        val components = EntityRegistry.loadEntity("baseExplosion")
+        val explosionEntity = instance.createEntity()
+        components.forEach {
+            instance.addComponentDynamic(explosionEntity, it)
+        }
+
+        // sets explosion position
+        val explosionTransformComponent = instance.getComponent<TransformComponent>(explosionEntity)
+        explosionTransformComponent.pos.set(projectileTransformComponent.pos)
+
+        // implements damage, take all the players and computes from the radius
+        // TODO
     }
 
     private fun bounce(entity: Entity, instance: Instance, angle: Float) {
