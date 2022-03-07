@@ -2,6 +2,8 @@ package systems
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.files.FileHandle
+import com.badlogic.gdx.graphics.Color
+import com.badlogic.gdx.graphics.Colors
 import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.BitmapFont
@@ -9,10 +11,7 @@ import com.badlogic.gdx.graphics.g2d.Sprite
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.utils.ScreenUtils
-import components.ScoreComponent
-import components.SpriteComponent
-import components.TransformComponent
-import components.ZoneComponent
+import components.*
 import core.*
 import render.SpriteRegister
 import java.lang.StringBuilder
@@ -102,8 +101,8 @@ class SpriteRenderSystem : System() {
                 val totalHeight = (transformComponent.scale.y * texture.height).toInt()
                 _spriteBatch?.draw(
                     texture,
-                    transformComponent.pos.x - totalWidth/2,
-                    transformComponent.pos.y - totalHeight/2,
+                    transformComponent.pos.x - totalWidth / 2,
+                    transformComponent.pos.y - totalHeight / 2,
                     0,
                     0,
                     (transformComponent.scale.x * texture.width).toInt(),
@@ -115,7 +114,10 @@ class SpriteRenderSystem : System() {
                 val totalHeight = texture.height.toFloat() * transformComponent.scale.y
                 sprite.setOrigin(totalWidth / 2f, totalHeight / 2f)
                 sprite.rotate(transformComponent.rot.z)
-                sprite.setPosition(transformComponent.pos.x - totalWidth / 2f, transformComponent.pos.y - totalHeight / 2f)
+                sprite.setPosition(
+                    transformComponent.pos.x - totalWidth / 2f,
+                    transformComponent.pos.y - totalHeight / 2f
+                )
                 sprite.setScale(transformComponent.scale.x, transformComponent.scale.y)
                 sprite.draw(_spriteBatch)
             }
@@ -137,9 +139,8 @@ class UISystem : System() {
 
     override fun initializeLogic(vararg arg: Any): Boolean {
         _spriteBatch = SpriteBatch()
-        val handler = Gdx.files.internal("")
-        _font = BitmapFont(Gdx.files.internal("src/main/resources/font/arial_narrow_7.ttf"), false)
-        _font?.data?.setScale(.2f)
+        _font = BitmapFont()
+        _font?.data?.setScale(1.5f)
         return true
     }
 
@@ -150,9 +151,23 @@ class UISystem : System() {
         var counter = 0
         entities.forEach {
             val scoreComponent = instance.getComponent<ScoreComponent>(it)
+            val characterComponent =
+                instance.getComponentDynamicUnsafe(it, CharacterComponent::class)
             val builder = StringBuilder()
-            builder.append("Player: ${scoreComponent.username} - Score: ${scoreComponent.score}")
-            _font?.draw(_spriteBatch!!, builder.toString(), Gdx.graphics.height - 20f, 10f + 100f * counter)
+
+            val x = if (counter == 0) 10f else Gdx.graphics.width - 270f
+
+            // printing score and health
+            builder.append("Player: ${scoreComponent.username} - Score: %.2f".format(scoreComponent.score))
+            _font?.draw(_spriteBatch!!, builder.toString(), x, Gdx.graphics.height - 20f)
+            builder.clear()
+            if (characterComponent != null) {
+                _font?.color = Color.GREEN
+                builder.append("Health: ${(characterComponent as CharacterComponent).health}")
+                _font?.draw(_spriteBatch!!, builder.toString(), x, Gdx.graphics.height - 50f)
+                _font?.color = Color.WHITE
+            }
+
             counter += 1
         }
 

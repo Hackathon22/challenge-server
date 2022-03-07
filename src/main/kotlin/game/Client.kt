@@ -102,11 +102,6 @@ open class ClientSession(private val gameTime : Float = 90f, private val sceneNa
         val scoreSignature = Signature() // accepts all kind of entities
         _instance.setSystemSignature<ScoreSystem>(scoreSignature)
 
-        _uiSystem.initialize()
-        val uiSignature = Signature()
-        uiSignature.set(_instance.getComponentType<ScoreComponent>(), true)
-        _instance.setSystemSignature<UISystem>(uiSignature)
-
         // sets observers on non-graphical systems
         _collisionSystem.addObserver(_projectileSystem)  // bullet collision
         _collisionSystem.addObserver(_stateSystem)  // state change
@@ -134,6 +129,11 @@ open class ClientSession(private val gameTime : Float = 90f, private val sceneNa
         spriteSignature.set(_instance.getComponentType<TransformComponent>(), true)
         spriteSignature.set(_instance.getComponentType<SpriteComponent>(), true)
         _instance.setSystemSignature<SpriteRenderSystem>(spriteSignature)
+
+        _uiSystem.initialize()
+        val uiSignature = Signature()
+        uiSignature.set(_instance.getComponentType<ScoreComponent>(), true)
+        _instance.setSystemSignature<UISystem>(uiSignature)
 
         // set observers on graphical systems
         this.addObserver(_cameraSystem)
@@ -180,5 +180,6 @@ open class ClientSession(private val gameTime : Float = 90f, private val sceneNa
         // render systems
         _cameraSystem.update(_instance, deltaTime)
         _spriteSystem.update(_instance, deltaTime)
+        _uiSystem.update(_instance, deltaTime)
     }
 }
