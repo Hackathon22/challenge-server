@@ -39,9 +39,12 @@ class MovementSystem : System() {
 class CollisionSystem : System() {
 
     private val _entitiesToBodies = HashMap<Entity, Body>()
+
     private val _bodiesToEntities = HashMap<Body, Entity>()
 
     private val _callbackPositions = HashMap<Entity, Vec3F>()
+
+    private val _collisionQueue = LinkedList<Triple<Entity, Entity, Vec3F>>()
 
     private val _entityCollided = HashMap<Entity, Boolean>()
 
@@ -63,26 +66,25 @@ class CollisionSystem : System() {
 
                     if (entityA != null && entityB != null && entityA != entityB) {
                         println("$entityA - $entityB")
-                        // rolling back entity position to last non colliding position
-                        _callbackPositions[entityA] = _entityPositions[entityA]!!
-                        _callbackPositions[entityB] = _entityPositions[entityB]!!
 
-                        // adds a bounce back from the contact point
+                        // computes the collision normal vector
                         val normalVector = Vec3F(
                             contact.worldManifold.normal.x,
                             contact.worldManifold.normal.y,
                             0f
-                        ).normalized()
+                        )
                         println("Normal collision vector: $normalVector")
+
+                        // rolling back entity position to last non colliding position
+                        _callbackPositions[entityA] = _entityPositions[entityA]!!
+                        _callbackPositions[entityB] = _entityPositions[entityB]!!
 
                         _entityCollided[entityA] = true
                         _entityCollided[entityB] = true
 
-                        // notifies listening systems
-                        notifyObservers(
-                            CollisionEvent(entityA, entityB, 0.0f),
-                            instance
-                        )
+                        // enqueues the collisions so they can be notified to listeners in the update
+                        // cycle
+                        _collisionQueue.add(Triple(entityA, entityB, normalVector))
                     }
                 }
 
@@ -160,21 +162,34 @@ class CollisionSystem : System() {
         entities.forEach {
             // sets the body position in the world
             val transformComponent = instance.getComponent<TransformComponent>(it)
+            val dynamicComponent = instance.getComponentDynamicUnsafe(it, DynamicComponent::class)
             _entitiesToBodies[it]?.setTransform(
                 transformComponent.pos.x,
                 transformComponent.pos.y,
                 transformComponent.rot.z * (PI.toFloat() / 180f)
             )
+            if (dynamicComponent != null) {
+                val dynamicComponentCasted = dynamicComponent as DynamicComponent
+                _entitiesToBodies[it]?.setLinearVelocity(dynamicComponentCasted.speed.x, dynamicComponent.speed.y)
+            }
         }
 
         // detects collisions, rolling back the current positions
-        _world.step(delta, 6, 6)
+        _world.step(delta, 1, 1)
 
         // rolling back position to last non-colliding position
-        _callbackPositions.forEach { entity, pos ->
+        _callbackPositions.forEach { (entity, pos) ->
+            // saves the rolled back position to the physical model
             val transformComponent = instance.getComponent<TransformComponent>(entity)
-            transformComponent.pos.set(pos)
+            val difference = transformComponent.pos - pos
+            transformComponent.pos.set(transformComponent.pos - (difference * 3f))
+            _entitiesToBodies[entity]?.setTransform(
+                transformComponent.pos.x,
+                transformComponent.pos.y,
+                transformComponent.rot.z * (PI.toFloat() / 180f)
+            )
         }
+        _callbackPositions.clear()
 
         // saving non colliding positions
         entities.forEach {
@@ -185,6 +200,20 @@ class CollisionSystem : System() {
             }
             _entityCollided[it] = false
         }
+
+        // emitting collision events to other systems
+        _collisionQueue.forEach {
+            // check if they are still colliding
+            _world.contactList.forEach { contact ->
+                if (_bodiesToEntities[contact.fixtureA.body] == it.first ||
+                    _bodiesToEntities[contact.fixtureB.body] == it.second) {
+                }
+            }
+            notifyObservers(
+                CollisionEvent(it.first, it.second, it.third), instance
+            )
+        }
+        _collisionQueue.clear()
     }
 
     override fun onEntityAdded(entity: Entity) {
