@@ -1,6 +1,7 @@
 package core
 
 import java.util.*
+import kotlin.collections.ArrayList
 
 typealias Entity = Int
 
@@ -38,6 +39,16 @@ class EntityManager {
     fun getSignature(entity: Entity) : Signature {
         assert(entity < MAX_ENTITIES) { "Invalid entity ID: $entity (out of range)" }
         return _signatures[entity]
+    }
+
+    fun allEntities() : ArrayList<Entity> {
+        val entityList = ArrayList<Entity>()
+        for (i in 0 until _entityCount) {
+            if (i != _availableEntities.peek()) {
+                entityList.add(i)
+            }
+        }
+        return entityList
     }
 
 }
