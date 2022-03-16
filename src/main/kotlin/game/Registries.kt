@@ -41,7 +41,7 @@ object EntityRegistry {
     private fun baseWall() : MutableList<IComponent> {
         val simpleTransformComponent = TransformComponent()
         val simpleSpriteComponent = SpriteComponent("bricks", repeat = true)
-        val simpleBodyComponent = BodyComponent(32f, 32f)
+        val simpleBodyComponent = BodyComponent(32f, 32f, static = true)
         return arrayListOf(
             simpleTransformComponent,
             simpleSpriteComponent,
