@@ -1,6 +1,5 @@
 package core
 
-import parser.Scene
 import kotlin.reflect.KClass
 
 class Instance {
@@ -18,6 +17,10 @@ class Instance {
         _entityManager.destroyEntity(entity)
         _componentManager.entityDestroyed(entity)
         _systemManager.entityDestroyed(entity)
+    }
+
+    fun getAllEntities() : ArrayList<Entity> {
+        return _entityManager.allEntities()
     }
 
     internal inline fun <reified T : IComponent> registerComponent() {

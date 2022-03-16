@@ -113,21 +113,8 @@ class ProjectileSystem : System() {
             val projectileComponent =
                 instance.getComponentDynamicUnsafe(it.first, ProjectileComponent::class) ?: return
 
-            // checks if the projectile collided with a character
-            val collidedCharacter =
-                instance.getComponentDynamicUnsafe(it.second, CharacterComponent::class)
-            if (collidedCharacter != null) {
-                explode(it.first, instance)
-                toRemoveEntities.add(it.first)
-                return@forEach
-            }
-
-            // reduces the bounces
-            (projectileComponent as ProjectileComponent).remainingBounces -= 1
-            if ((projectileComponent as ProjectileComponent).remainingBounces < 0) {
-                explode(it.first, instance)
-                toRemoveEntities.add(it.first)
-            } else bounce(it.first, instance, it.third)
+            explode(it.first, instance)
+            toRemoveEntities.add(it.first)
         }
 
         toRemoveEntities.forEach {
