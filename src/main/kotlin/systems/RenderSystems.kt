@@ -149,6 +149,7 @@ class UISystem : System() {
             val scoreComponent = instance.getComponent<ScoreComponent>(it)
             val characterComponent =
                 instance.getComponentDynamicUnsafe(it, CharacterComponent::class)
+            val transformComponent = instance.getComponent<TransformComponent>(it)
             val builder = StringBuilder()
 
             val x = if (counter == 0) 10f else Gdx.graphics.width - 270f

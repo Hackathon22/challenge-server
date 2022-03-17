@@ -2,24 +2,18 @@ package game
 
 import com.badlogic.gdx.ApplicationAdapter
 import com.badlogic.gdx.Gdx
-import com.esotericsoftware.kryonet.Client
 import components.*
 import core.*
 import net.ClientStatus
 import render.SpriteRegister
 import systems.*
-import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.collections.ArrayList
-
-const val DEFAULT_TIMEOUT = 10000
 
 const val BASE_WIDTH = 1200
 const val BASE_HEIGHT = 800
 
 open class ClientSession(private val gameTime : Float = 90f, private val sceneName : String? = "baseScene") : ApplicationAdapter(), IObservable {
-
-    private val _client = Client()
 
     private var _status = ClientStatus.DISCONNECTED
     private var _initializedClass = false
@@ -51,6 +45,8 @@ open class ClientSession(private val gameTime : Float = 90f, private val sceneNa
 
     private val _timerSystem : System = _instance.registerSystem<TimerSystem>()
 
+    private val _spawnerSystem : System = _instance.registerSystem<SpawnerSystem>()
+
     override val observers = ArrayList<IObserver>()
 
     init {
@@ -69,6 +65,7 @@ open class ClientSession(private val gameTime : Float = 90f, private val sceneNa
         _instance.registerComponent<ZoneComponent>()
         _instance.registerComponent<ScoreComponent>()
         _instance.registerComponent<TimerComponent>()
+        _instance.registerComponent<SpawnerComponent>()
 
         // initializes non-graphical systems
         _movementSystem.initialize()
@@ -112,9 +109,15 @@ open class ClientSession(private val gameTime : Float = 90f, private val sceneNa
         timerSignature.set(_instance.getComponentType<TimerComponent>(), true)
         _instance.setSystemSignature<TimerSystem>(timerSignature)
 
+        _spawnerSystem.initialize()
+        val spawnerSignature = Signature()
+        spawnerSignature.set(_instance.getComponentType<SpawnerComponent>(), true)
+        _instance.setSystemSignature<SpawnerSystem>(spawnerSignature)
+
         // sets observers on non-graphical systems
         _collisionSystem.addObserver(_projectileSystem)  // bullet collision
         _collisionSystem.addObserver(_stateSystem)  // state change
+        _stateSystem.addObserver(_stateSystem)
     }
 
     override fun create() {

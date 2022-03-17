@@ -57,8 +57,12 @@ data class Vec3F(var x: Float, var y: Float, var z: Float) {
     operator fun times(scalar: Float) = Vec3F(x * scalar, y * scalar, z * scalar)
 
     fun normalized() : Vec3F {
-        val norm = sqrt(x * x + y * y + z * z)
-        return if (norm != 0f) Vec3F(x / norm, y / norm, z / norm) else Vec3F(0f, 0f, 0f)
+        val normValue = norm()
+        return if (normValue != 0f) Vec3F(x / normValue, y / normValue, z / normValue) else Vec3F(0f, 0f, 0f)
+    }
+
+    fun norm(): Float {
+        return sqrt(x * x + y * y + z * z)
     }
 
     fun set(other: Vec3F) : Vec3F {

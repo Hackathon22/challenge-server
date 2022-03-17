@@ -65,7 +65,6 @@ class CollisionSystem : System() {
                     val entityB = _bodiesToEntities[contact.fixtureB.body]
 
                     if (entityA != null && entityB != null && entityA != entityB) {
-                        println("$entityA - $entityB")
 
                         // computes the collision normal vector
                         val normalVector = Vec3F(
@@ -73,7 +72,6 @@ class CollisionSystem : System() {
                             contact.worldManifold.normal.y,
                             0f
                         )
-                        println("Normal collision vector: $normalVector")
 
                         // rolling back entity position to last non colliding position
                         _callbackPositions[entityA] = _entityPositions[entityA]!!
@@ -91,7 +89,6 @@ class CollisionSystem : System() {
                 override fun endContact(contact: Contact) {
                     val entityA = _bodiesToEntities[contact.fixtureA.body]
                     val entityB = _bodiesToEntities[contact.fixtureB.body]
-                    println("End of contact: $entityA - $entityB")
                 }
 
                 override fun preSolve(contact: Contact, oldManifold: Manifold?) {

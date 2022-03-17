@@ -6,6 +6,8 @@ import core.*
 import game.EntityRegistry
 import java.util.*
 import kotlin.collections.ArrayList
+import kotlin.math.exp
+import kotlin.math.sqrt
 
 /**
  * System that takes care of adding new projectile upon shooting, and that takes care of projectile collision events
@@ -135,6 +137,8 @@ class ProjectileSystem : System() {
     private fun explode(entity: Entity, instance: Instance) {
         // projectile's position
         val projectileTransformComponent = instance.getComponent<TransformComponent>(entity)
+        val projectileBodyComponent = instance.getComponent<BodyComponent>(entity)
+        val projectileComponent = instance.getComponent<ProjectileComponent>(entity)
 
         // adds an explosion entity
         val components = EntityRegistry.loadEntity("baseExplosion")
@@ -146,16 +150,49 @@ class ProjectileSystem : System() {
         // sets explosion position
         val explosionTransformComponent = instance.getComponent<TransformComponent>(explosionEntity)
         explosionTransformComponent.pos.set(projectileTransformComponent.pos)
+        // sets the explosion position a bit further
+        explosionTransformComponent.pos.x += (projectileBodyComponent.width * 1.5f) * cosDeg(
+            projectileTransformComponent.rot.z
+        )
+        explosionTransformComponent.pos.y += (projectileBodyComponent.height * 1.5f) * sinDeg(
+            projectileTransformComponent.rot.z
+        )
 
         // implements damage, take all the players and computes from the radius
-
+        val allEntities = instance.getAllEntities()
+        allEntities.forEach {
+            val characterComponent =
+                instance.getComponentDynamicUnsafe(it, CharacterComponent::class)
+            if (characterComponent != null) {
+                val characterComponentCasted = characterComponent as CharacterComponent
+                val transformComponent = instance.getComponent<TransformComponent>(it)
+                val damage = computeDamage(
+                    projectileComponent.impact.damage,
+                    projectileComponent.impact.radius,
+                    explosionTransformComponent.pos,
+                    transformComponent.pos
+                )
+                characterComponentCasted.health -= damage
+                if (damage > 0f) {
+                    val damageEvent = DamageEvent(damage, it)
+                    if (characterComponentCasted.health <= 0f) damageEvent.fatal = true
+                    notifyObservers(DamageEvent(damage, it), instance)
+                }
+            }
+        }
     }
 
-    private fun bounce(entity: Entity, instance: Instance, angle: Float) {
-        // changes the projectile speed
-        val dynamicComponent = instance.getComponent<DynamicComponent>(entity)
-
-        // TODO implement bounce by changing the dynamic component
+    private fun computeDamage(
+        baseDamage: Float,
+        explosionRadius: Float,
+        bulletPos: Vec3F,
+        playerPos: Vec3F
+    ): Float {
+        val distance = (playerPos - bulletPos).norm()
+        // gaussian mean is around 0 and the stdev is 5
+        val damage =
+            100f * baseDamage * (1f / (explosionRadius * sqrt(2f * PI)) * exp(-(distance * distance) / (2 * explosionRadius * explosionRadius)))
+        return if (damage < 1f) 0f else damage
     }
 
     override fun onEvent(event: Event, observable: IObservable, instance: Instance) {

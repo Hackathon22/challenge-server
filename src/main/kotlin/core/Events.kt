@@ -15,6 +15,8 @@ abstract class EntityEvent(val entity: Entity) : Event()
  */
 class HitEvent(val duration: Float, entity: Entity) : EntityEvent(entity)
 
+class DamageEvent(val damage: Float, entity: Entity, var fatal : Boolean = false) : EntityEvent(entity)
+
 /**
  * A physical event related to a certain entity
  */

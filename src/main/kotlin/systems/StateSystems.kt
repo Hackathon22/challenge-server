@@ -70,6 +70,9 @@ private class IdleState(entity: Entity) : State(entity) {
         if (event is HitEvent) {
             return HitState(event.duration, event.entity)
         }
+        if (event is DamageEvent) {
+            if (event.fatal) return DeadState(entity = _entity)
+        }
         return null
     }
 
@@ -209,6 +212,42 @@ private class HitState(private var _duration: Float, entity: Entity) : State(ent
     }
 
     override fun onStateEnd(instance: Instance) {
+    }
+}
+
+private class DeadState(private var _duration: Float = 5f, entity: Entity) : State(entity) {
+
+    private var waitTime = 0f
+
+    override val state: States
+        get() = States.DEAD
+
+    override fun update(instance: Instance, delta: Float): State? {
+        waitTime += delta
+        if (waitTime >= _duration) {
+            return IdleState(_entity)
+        }
+        return null
+    }
+
+    override fun onCommand(instance: Instance, command: Command): State? {
+        return null
+    }
+
+    override fun onEvent(event: Event): State? {
+        return null
+    }
+
+    override fun onStateBegin(instance: Instance) {
+        // moves the player away from the map
+        val transformComponent = instance.getComponent<TransformComponent>(_entity)
+        transformComponent.pos.x = -1000f
+        transformComponent.pos.y = -1000f
+    }
+
+    override fun onStateEnd(instance: Instance) {
+        val spawnerSystem = instance.getSystem<SpawnerSystem>()
+        spawnerSystem.spawn(instance, _entity)
     }
 }
 

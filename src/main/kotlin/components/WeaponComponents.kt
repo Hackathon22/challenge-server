@@ -13,7 +13,8 @@ data class ImpactInfo(
     val stunDuration: Float,
     val knockBackDuration: Float,
     val knockBackSpeed: Float,
-    val damage: Float
+    val damage: Float,
+    val radius: Float
 )
 
 /**

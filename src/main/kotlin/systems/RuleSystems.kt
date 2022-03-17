@@ -1,8 +1,6 @@
 package systems
 
-import components.ScoreComponent
-import components.TransformComponent
-import components.ZoneComponent
+import components.*
 import core.Entity
 import core.Instance
 import core.System
@@ -97,4 +95,34 @@ class ScoreSystem : System() {
             _removedEntities.add(entity)
     }
 
+}
+
+class SpawnerSystem : System() {
+    override fun initializeLogic(vararg arg: Any): Boolean {
+        return true
+    }
+
+    override fun updateLogic(instance: Instance, delta: Float) {
+    }
+
+    override fun onEntityAdded(entity: Entity) {
+    }
+
+    override fun onEntityRemoved(entity: Entity) {
+    }
+
+    fun spawn(instance: Instance, entity: Entity) {
+        val scoreComponent = instance.getComponent<ScoreComponent>(entity)
+        val transformComponent = instance.getComponent<TransformComponent>(entity)
+        entities.forEach {
+            val spawnerComponent = instance.getComponent<SpawnerComponent>(it)
+            if (spawnerComponent.team == scoreComponent.team) {
+                val characterComponent = instance.getComponent<CharacterComponent>(it)
+                val spawnerTransformComponent = instance.getComponent<TransformComponent>(it)
+                transformComponent.pos.set(spawnerTransformComponent.pos)
+                characterComponent.health = characterComponent.maxHealth // heals up to 100%
+                return@forEach
+            }
+        }
+    }
 }
