@@ -175,8 +175,9 @@ class ProjectileSystem : System() {
                 characterComponentCasted.health -= damage
                 if (damage > 0f) {
                     val damageEvent = DamageEvent(damage, it)
-                    if (characterComponentCasted.health <= 0f) damageEvent.fatal = true
-                    notifyObservers(DamageEvent(damage, it), instance)
+                    if (characterComponentCasted.health <= 0f)
+                        damageEvent.fatal = true
+                    notifyObservers(damageEvent, instance)
                 }
             }
         }

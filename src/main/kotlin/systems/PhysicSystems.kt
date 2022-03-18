@@ -77,18 +77,19 @@ class CollisionSystem : System() {
                         _callbackPositions[entityA] = _entityPositions[entityA]!!
                         _callbackPositions[entityB] = _entityPositions[entityB]!!
 
-                        _entityCollided[entityA] = true
-                        _entityCollided[entityB] = true
 
-                        // enqueues the collisions so they can be notified to listeners in the update
-                        // cycle
-                        _collisionQueue.add(Triple(entityA, entityB, normalVector))
+                        if (!_entityCollided[entityA]!! || !_entityCollided[entityB]!!) {
+                            _entityCollided[entityA] = true
+                            _entityCollided[entityB] = true
+
+                            // enqueues the collisions so they can be notified to listeners in the update
+                            // cycle
+                            _collisionQueue.add(Triple(entityA, entityB, normalVector))
+                        }
                     }
                 }
 
                 override fun endContact(contact: Contact) {
-                    val entityA = _bodiesToEntities[contact.fixtureA.body]
-                    val entityB = _bodiesToEntities[contact.fixtureB.body]
                 }
 
                 override fun preSolve(contact: Contact, oldManifold: Manifold?) {
@@ -200,12 +201,6 @@ class CollisionSystem : System() {
 
         // emitting collision events to other systems
         _collisionQueue.forEach {
-            // check if they are still colliding
-            _world.contactList.forEach { contact ->
-                if (_bodiesToEntities[contact.fixtureA.body] == it.first ||
-                    _bodiesToEntities[contact.fixtureB.body] == it.second) {
-                }
-            }
             notifyObservers(
                 CollisionEvent(it.first, it.second, it.third), instance
             )

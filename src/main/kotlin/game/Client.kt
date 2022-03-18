@@ -8,6 +8,7 @@ import net.ClientStatus
 import render.SpriteRegister
 import systems.*
 import java.util.concurrent.atomic.AtomicBoolean
+import javax.naming.ldap.Control
 import kotlin.collections.ArrayList
 
 const val BASE_WIDTH = 1200
@@ -111,13 +112,14 @@ open class ClientSession(private val gameTime : Float = 90f, private val sceneNa
 
         _spawnerSystem.initialize()
         val spawnerSignature = Signature()
+        spawnerSignature.set(_instance.getComponentType<TransformComponent>(), true)
         spawnerSignature.set(_instance.getComponentType<SpawnerComponent>(), true)
         _instance.setSystemSignature<SpawnerSystem>(spawnerSignature)
 
         // sets observers on non-graphical systems
         _collisionSystem.addObserver(_projectileSystem)  // bullet collision
         _collisionSystem.addObserver(_stateSystem)  // state change
-        _stateSystem.addObserver(_stateSystem)
+        _projectileSystem.addObserver(_stateSystem)
     }
 
     override fun create() {
@@ -161,6 +163,10 @@ open class ClientSession(private val gameTime : Float = 90f, private val sceneNa
                 }
             }
         }
+
+        // loads two players
+        (_spawnerSystem as SpawnerSystem).spawn(_instance, "player_1", 0, ControllerType.LOCAL_INPUT)
+        (_spawnerSystem as SpawnerSystem).spawn(_instance, "player_2", 1, ControllerType.AI)
 
         _running.set(true)
     }

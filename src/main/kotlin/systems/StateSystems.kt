@@ -2,11 +2,9 @@ package systems
 
 import components.*
 import core.*
-import java.util.*
 import kotlin.collections.HashMap
 import kotlin.math.PI
 import kotlin.math.atan
-import kotlin.math.sign
 
 
 private abstract class State(protected val _entity: Entity) {
@@ -112,6 +110,9 @@ private class MovingState(private var _direction: Vec3F, entity: Entity) : State
             if (event.entity == _entity || event.collidedEntity == _entity)
                 return IdleState(_entity)
         }
+        if (event is DamageEvent) {
+            if (event.fatal) return DeadState(entity = _entity)
+        }
         return null
     }
 
@@ -168,6 +169,7 @@ private class ShootingState(entity: Entity) : State(entity) {
     override fun onEvent(event: Event): State? {
         return when (event) {
             is HitEvent -> HitState(event.duration, _entity)
+            is DamageEvent -> return if (event.fatal) DeadState(entity = _entity) else null
             else -> null
         }
     }
@@ -203,6 +205,7 @@ private class HitState(private var _duration: Float, entity: Entity) : State(ent
     override fun onEvent(event: Event): State? {
         return when (event) {
             is HitEvent -> HitState(event.duration, _entity)
+            is DamageEvent -> return if (event.fatal) DeadState(entity = _entity) else null
             else -> null
         }
     }
@@ -247,7 +250,7 @@ private class DeadState(private var _duration: Float = 5f, entity: Entity) : Sta
 
     override fun onStateEnd(instance: Instance) {
         val spawnerSystem = instance.getSystem<SpawnerSystem>()
-        spawnerSystem.spawn(instance, _entity)
+        spawnerSystem.respawn(instance, _entity)
     }
 }
 

@@ -59,7 +59,7 @@ object EntityRegistry {
         val simpleCharacterComponent = CharacterComponent(health = 100.0f, maxSpeed =  200.0f)
         val simpleBodyComponent = BodyComponent(32.0f, 32.0f)
         val simpleScoreComponent = ScoreComponent()
-        return arrayListOf(
+        val componentList = arrayListOf(
             simpleTransformComponent,
             simpleSpriteComponent,
             simpleStateComponent,
@@ -68,6 +68,8 @@ object EntityRegistry {
             simpleBodyComponent,
             simpleScoreComponent
         )
+        componentList.addAll(baseRocketLauncher())
+        return componentList
     }
 
     private fun basePlayer(): MutableList<IComponent> {
@@ -186,6 +188,7 @@ object SceneRegistry {
         firstSpawnerTransformComponent.pos.y = 250f
         val firstSpawnerSpawnerComponent = _instance.getComponent<SpawnerComponent>(firstSpawner)
         firstSpawnerSpawnerComponent.team = 0
+        scene[firstSpawner] = _instance.getAllComponents(firstSpawner)
 
         val secondSpawner = _instance.createEntity()
         EntityRegistry.loadEntity("baseSpawner").forEach {
@@ -196,6 +199,7 @@ object SceneRegistry {
         secondSpawnerTransformComponent.pos.y = -250f
         val secondSpawnerSpawnerComponent = _instance.getComponent<SpawnerComponent>(secondSpawner)
         secondSpawnerSpawnerComponent.team = 1
+        scene[secondSpawner] = _instance.getAllComponents(secondSpawner)
 
 
         val zoneEntity = _instance.createEntity()
@@ -205,29 +209,6 @@ object SceneRegistry {
         val zoneTransformComponent = _instance.getComponent<TransformComponent>(zoneEntity)
         zoneTransformComponent.pos.set(Vec3F(0f, 0f, 0f))
         scene[zoneEntity] = _instance.getAllComponents(zoneEntity)
-
-        val simpleEntity = _instance.createEntity()
-        EntityRegistry.loadEntity("basePlayer").forEach {
-            _instance.addComponentDynamic(simpleEntity, it)
-        }
-        EntityRegistry.loadEntity("baseRocketLauncher").forEach {
-            _instance.addComponentDynamic(simpleEntity, it)
-        }
-        _instance.getComponent<TransformComponent>(simpleEntity).pos.x = -100.0f
-        _instance.getComponent<TransformComponent>(simpleEntity).pos.y = 0f
-        _instance.getComponent<TransformComponent>(simpleEntity).rot.z = 45.0f
-
-        scene[simpleEntity] = _instance.getAllComponents(simpleEntity)
-
-        val simpleEntity2 = _instance.createEntity()
-        EntityRegistry.loadEntity("baseCharacter").forEach {
-            _instance.addComponentDynamic(simpleEntity2, it)
-        }
-        EntityRegistry.loadEntity("baseRocketLauncher").forEach {
-            _instance.addComponentDynamic(simpleEntity2, it)
-        }
-
-        scene[simpleEntity2] = _instance.getAllComponents(simpleEntity2)
 
         // scene walls
         val topWall = addWall(0f, 316f, 664f, 32f)

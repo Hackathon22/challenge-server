@@ -4,6 +4,7 @@ import components.*
 import core.Entity
 import core.Instance
 import core.System
+import game.EntityRegistry
 import java.util.*
 
 class ScoreSystem : System() {
@@ -111,18 +112,43 @@ class SpawnerSystem : System() {
     override fun onEntityRemoved(entity: Entity) {
     }
 
-    fun spawn(instance: Instance, entity: Entity) {
+    fun respawn(instance: Instance, entity: Entity) {
         val scoreComponent = instance.getComponent<ScoreComponent>(entity)
         val transformComponent = instance.getComponent<TransformComponent>(entity)
         entities.forEach {
             val spawnerComponent = instance.getComponent<SpawnerComponent>(it)
             if (spawnerComponent.team == scoreComponent.team) {
-                val characterComponent = instance.getComponent<CharacterComponent>(it)
+                val characterComponent = instance.getComponent<CharacterComponent>(entity)
                 val spawnerTransformComponent = instance.getComponent<TransformComponent>(it)
                 transformComponent.pos.set(spawnerTransformComponent.pos)
                 characterComponent.health = characterComponent.maxHealth // heals up to 100%
                 return@forEach
             }
         }
+    }
+
+    fun spawn(instance: Instance, username: String, team: Int, controllerType: ControllerType) : Entity {
+        val characterComponents = EntityRegistry.loadEntity("baseCharacter")
+        val controllerComponent = CommandComponent(controllerType = controllerType)
+        val entity = instance.createEntity()
+        characterComponents.forEach {
+            instance.addComponentDynamic(entity, it)
+        }
+        instance.addComponentDynamic(entity, controllerComponent)
+
+        val scoreComponent = instance.getComponent<ScoreComponent>(entity)
+        scoreComponent.team = team
+        scoreComponent.username = username
+
+        entities.forEach {
+            val spawnerComponent = instance.getComponent<SpawnerComponent>(it)
+            if (spawnerComponent.team == scoreComponent.team) {
+                val spawnerTransformComponent = instance.getComponent<TransformComponent>(it)
+                val transformComponent = instance.getComponent<TransformComponent>(entity)
+                transformComponent.pos.set(spawnerTransformComponent.pos)
+                return@forEach
+            }
+        }
+        return entity
     }
 }
