@@ -47,5 +47,5 @@ class ShootCommand : StateCommand() {
 }
 
 
-data class CommandComponent(val controllerType: ControllerType = ControllerType.LOCAL_INPUT,
+data class CommandComponent(var controllerType: ControllerType = ControllerType.LOCAL_INPUT,
                             val commands: Queue<Command> = LinkedList()) : IComponent

@@ -16,12 +16,20 @@ class InputSystem : System(), InputProcessor {
 
     private var _lastDirection = Vec3F(0f, 0f, 0f)
 
+    private var _switchPlayer : Boolean = false
+
     override fun initializeLogic(vararg arg: Any): Boolean {
         Gdx.input.inputProcessor = this
         return true
     }
 
     override fun updateLogic(instance: Instance, delta: Float) {
+
+        if (_switchPlayer) {
+            switchPlayer(instance)
+            _switchPlayer = false
+        }
+
         // generates commands from the mouse queue
         _mouseQueue.forEach {
             // get the camera system in order to obtain the real world cursor position
@@ -58,6 +66,7 @@ class InputSystem : System(), InputProcessor {
         // clears the commands
         _queue.clear()
         _mouseQueue.clear()
+
     }
 
     override fun onEntityAdded(entity: Entity) {
@@ -71,6 +80,9 @@ class InputSystem : System(), InputProcessor {
         when (keycode) {
             Input.Keys.SPACE -> {
                 _queue.add(ShootCommand())
+            }
+            Input.Keys.TAB -> {
+                _switchPlayer = true
             }
         }
         return true
@@ -115,5 +127,17 @@ class InputSystem : System(), InputProcessor {
     }
 
     override fun scrolled(amountX: Float, amountY: Float): Boolean = true
+
+    private fun switchPlayer(instance: Instance) {
+        entities.forEach {
+            val commandComponent = instance.getComponent<CommandComponent>(it)
+            if (commandComponent.controllerType == ControllerType.LOCAL_INPUT) {
+                commandComponent.controllerType = ControllerType.AI
+            }
+            else {
+                commandComponent.controllerType = ControllerType.LOCAL_INPUT
+            }
+        }
+    }
 
 }

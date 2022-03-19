@@ -4,11 +4,9 @@ import com.badlogic.gdx.ApplicationAdapter
 import com.badlogic.gdx.Gdx
 import components.*
 import core.*
-import net.ClientStatus
 import render.SpriteRegister
 import systems.*
 import java.util.concurrent.atomic.AtomicBoolean
-import javax.naming.ldap.Control
 import kotlin.collections.ArrayList
 
 const val BASE_WIDTH = 1200
@@ -16,7 +14,6 @@ const val BASE_HEIGHT = 800
 
 open class ClientSession(private val gameTime : Float = 90f, private val sceneName : String? = "baseScene") : ApplicationAdapter(), IObservable {
 
-    private var _status = ClientStatus.DISCONNECTED
     private var _initializedClass = false
     private var _username : String? = null
 

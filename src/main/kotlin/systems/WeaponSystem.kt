@@ -199,7 +199,6 @@ class ProjectileSystem : System() {
     override fun onEvent(event: Event, observable: IObservable, instance: Instance) {
         if (event is CollisionEvent) {
             if (event.entity in entities) {
-                // TODO compute angle from normal vector
                 _collidedEntities.add(Triple(event.entity, event.collidedEntity, 0f))
             }
         }

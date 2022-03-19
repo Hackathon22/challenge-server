@@ -1,5 +1,6 @@
 package net
 
+import game.ClientSession
 import net.packets.DeltaSnapshotPacket
 import org.junit.jupiter.api.Test
 
@@ -7,7 +8,6 @@ class TestSnapshotUpdate {
 
     @Test
     fun testDeltaClientServer() {
-        // TODO ("Introduce entities to server")
         var receivedDeltaSnapshot = false
 
         val server = ServerSession()
@@ -18,7 +18,6 @@ class TestSnapshotUpdate {
         server.start()
 
         val clientThread = Thread {
-            client.connect("127.0.0.1", "TestUsername", "TestPassword")
             // waits a bit to receive delta snapshots
             Thread.sleep(500)
         }
