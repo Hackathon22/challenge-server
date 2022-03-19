@@ -2,10 +2,12 @@ package systems
 
 import components.*
 import core.*
-import java.io.*
+import java.io.BufferedReader
+import java.io.IOException
+import java.io.InputStreamReader
+import java.io.PrintWriter
 import java.net.ServerSocket
 import java.net.Socket
-import javax.swing.plaf.nimbus.State
 
 
 data class PlayerData(val pos: Vec3F, val speed: Vec3F, val state: States, val health: Float)
@@ -13,7 +15,8 @@ data class PlayerData(val pos: Vec3F, val speed: Vec3F, val state: States, val h
 class PythonClient(
     private val client: Socket,
     private val username: String,
-    private val entity: Entity
+    private val entity: Entity,
+    private val team: Int
 ) {
     fun pollActions(instance: Instance): StateCommand {
         val output = PrintWriter(client.getOutputStream(), true)
@@ -88,37 +91,67 @@ class PythonClient(
         TODO("Serialize the data")
         TODO("ask for action")
     }
+
+    fun abort() {
+        TODO("implement")
+    }
+
+    fun finished(results: List<GameResult>) {
+        TODO("implement")
+    }
 }
+
+data class AgentData(val valid: Boolean, val username: String, val team: Int, val entity: Entity)
 
 class PythonAISystem : System() {
 
-    private val _serverSocket = ServerSocket(2049)
+    private val _port = 2049
+
+    private val _serverSocket = ServerSocket(_port)
 
     private val _clients = HashMap<String, PythonClient>()
 
     private val _usernameToEntity = HashMap<String, Entity>()
 
-    fun addAgent(entity: Entity, username: String, port: Int): Boolean {
+    private var _aiTime: Float? = null
+
+    private var _savePath: String? = null
+
+    fun addAgent(instance: Instance): AgentData {
         try {
+            println("Waiting for an agent to connect on port $_port.")
             val client = _serverSocket.accept()
             val inputStream = BufferedReader(InputStreamReader(client.getInputStream()))
 
             // gets the username, this operation is blocking and waits for the python script to connect
             val username = inputStream.readLine()
+            val team = Integer.parseInt(inputStream.readLine())
             if (username != null && username != "" && username != "\n") {
-                _clients[username] = PythonClient(client, username, entity)
+                val entity = instance.createEntity()
+                _clients[username] = PythonClient(client, username, entity, team)
                 _usernameToEntity[username] = entity
-                println("Agent connected with username $username for entity $entity")
-                return true
+                println("Agent connected with username: $username and team: $team." +
+                        " Assigned to player entity: $entity")
+                return AgentData(true, username, team, entity)
             }
-            return false
+            return AgentData(false, "", 0, 0)
         } catch (exc: IOException) {
-            return false
+            abort()
+            return AgentData(false, "", 0, 0)
         }
     }
 
     override fun initializeLogic(vararg arg: Any): Boolean {
-        return true
+        if (arg.size < 2) {
+            return false
+        }
+        return try {
+            _aiTime = arg[0] as Float
+            _savePath = arg[1] as String
+            true
+        } catch (exc: TypeCastException) {
+            false
+        }
     }
 
     override fun updateLogic(instance: Instance, delta: Float) {
@@ -137,5 +170,17 @@ class PythonAISystem : System() {
     }
 
     override fun onEntityRemoved(entity: Entity) {
+    }
+
+    private fun abort() {
+        _clients.forEach { (_, session) ->
+            session.abort()
+        }
+    }
+
+    fun finish(results: List<GameResult>) {
+        _clients.forEach { (_, session) ->
+            session.finished(results)
+        }
     }
 }

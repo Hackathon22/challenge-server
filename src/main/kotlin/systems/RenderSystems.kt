@@ -7,10 +7,12 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.g2d.Sprite
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.utils.ScreenUtils
-import components.*
+import components.CharacterComponent
+import components.ScoreComponent
+import components.SpriteComponent
+import components.TransformComponent
 import core.*
 import render.SpriteRegister
-import java.lang.StringBuilder
 
 class CameraSystem : System() {
 

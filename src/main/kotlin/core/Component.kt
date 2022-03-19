@@ -1,7 +1,6 @@
 package core
 
 import java.util.*
-import kotlin.collections.ArrayList
 import kotlin.reflect.KClass
 
 typealias Index = Int

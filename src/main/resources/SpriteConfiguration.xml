@@ -3,27 +3,27 @@
  <object class="java.util.HashMap">
   <void method="put">
    <string>invalid</string>
-   <string>src/main/resources/sprites/invalidFront.png</string>
+   <string>sprites/invalidFront.png</string>
   </void>
   <void method="put">
    <string>rocket</string>
-   <string>src/main/resources/sprites/rocket.png</string>
+   <string>sprites/rocket.png</string>
   </void>
   <void method="put">
    <string>soldier</string>
-   <string>src/main/resources/sprites/soldier.png</string>
+   <string>sprites/soldier.png</string>
   </void>
   <void method="put">
    <string>bricks</string>
-   <string>src/main/resources/sprites/bricks.png</string>
+   <string>sprites/bricks.png</string>
   </void>
   <void method="put">
    <string>zone</string>
-   <string>src/main/resources/sprites/zone.png</string>
+   <string>sprites/zone.png</string>
   </void>
   <void method="put">
    <string>explosion</string>
-   <string>src/main/resources/sprites/explosion.png</string>
+   <string>sprites/explosion.png</string>
   </void>
  </object>
 </java>

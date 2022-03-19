@@ -5,16 +5,15 @@ import core.Entity
 import core.IComponent
 import core.Instance
 import core.Vec3F
-import parser.Scene
 import java.util.*
-import kotlin.collections.ArrayList
-import kotlin.collections.HashMap
 
+typealias Scene = HashMap<Entity, ArrayList<IComponent>>
 
 object EntityRegistry {
     private val entityMap: HashMap<String, () -> MutableList<IComponent>> = hashMapOf(
         "baseCharacter" to ::baseCharacter,
         "basePlayer" to ::basePlayer,
+        "basePlayerWindowless" to ::basePlayerWindowless,
         "baseCamera" to ::baseCamera,
         "baseRocketLauncher" to ::baseRocketLauncher,
         "baseWall" to ::baseWall,
@@ -56,7 +55,7 @@ object EntityRegistry {
         simpleSpriteComponent.sprite = "soldier"
         val simpleStateComponent = StateComponent()
         val simpleDynamicComponent = DynamicComponent()
-        val simpleCharacterComponent = CharacterComponent(health = 100.0f, maxSpeed =  200.0f)
+        val simpleCharacterComponent = CharacterComponent(health = 100.0f, maxSpeed = 200.0f)
         val simpleBodyComponent = BodyComponent(32.0f, 32.0f)
         val simpleScoreComponent = ScoreComponent()
         val componentList = arrayListOf(
@@ -77,6 +76,27 @@ object EntityRegistry {
         val simpleCommandComponent = CommandComponent(ControllerType.LOCAL_INPUT, LinkedList())
         components.add(simpleCommandComponent)
         return components
+    }
+
+    private fun basePlayerWindowless() : MutableList<IComponent> {
+        val simpleTransformComponent = TransformComponent()
+        val simpleStateComponent = StateComponent()
+        val simpleDynamicComponent = DynamicComponent()
+        val simpleCharacterComponent = CharacterComponent(health = 100.0f, maxSpeed = 200.0f)
+        val simpleBodyComponent = BodyComponent(32.0f, 32.0f)
+        val simpleScoreComponent = ScoreComponent()
+        val simpleCommandComponent = CommandComponent(ControllerType.AI)
+        val componentList = arrayListOf(
+            simpleTransformComponent,
+            simpleStateComponent,
+            simpleDynamicComponent,
+            simpleCharacterComponent,
+            simpleBodyComponent,
+            simpleScoreComponent,
+            simpleCommandComponent
+        )
+        componentList.addAll(baseRocketLauncher())
+        return componentList
     }
 
     private fun baseCamera(): MutableList<IComponent> {
@@ -124,7 +144,8 @@ object EntityRegistry {
 object SceneRegistry {
 
     private val sceneMap: HashMap<String, () -> Scene> = hashMapOf(
-        "baseScene" to ::baseScene
+        "baseScene" to ::baseScene,
+        "baseSceneWindowless" to ::baseSceneWindowless
     )
 
     private val _instance = Instance()
@@ -183,7 +204,8 @@ object SceneRegistry {
         EntityRegistry.loadEntity("baseSpawner").forEach {
             _instance.addComponentDynamic(firstSpawner, it)
         }
-        val firstSpawnerTransformComponent = _instance.getComponent<TransformComponent>(firstSpawner)
+        val firstSpawnerTransformComponent =
+            _instance.getComponent<TransformComponent>(firstSpawner)
         firstSpawnerTransformComponent.pos.x = -250f
         firstSpawnerTransformComponent.pos.y = 250f
         val firstSpawnerSpawnerComponent = _instance.getComponent<SpawnerComponent>(firstSpawner)
@@ -194,7 +216,8 @@ object SceneRegistry {
         EntityRegistry.loadEntity("baseSpawner").forEach {
             _instance.addComponentDynamic(secondSpawner, it)
         }
-        val secondSpawnerTransformComponent = _instance.getComponent<TransformComponent>(secondSpawner)
+        val secondSpawnerTransformComponent =
+            _instance.getComponent<TransformComponent>(secondSpawner)
         secondSpawnerTransformComponent.pos.x = 250f
         secondSpawnerTransformComponent.pos.y = -250f
         val secondSpawnerSpawnerComponent = _instance.getComponent<SpawnerComponent>(secondSpawner)
@@ -244,5 +267,19 @@ object SceneRegistry {
         return scene
     }
 
-
+    private fun baseSceneWindowless(): Scene {
+        val scene = baseScene()
+        scene.forEach { (entity, components) ->
+            val componentIterator = components.iterator()
+            while (componentIterator.hasNext()) {
+                val component = componentIterator.next()
+                if (component is CameraComponent ||
+                    component is SpriteComponent
+                ) {
+                    componentIterator.remove()
+                }
+            }
+        }
+        return scene
+    }
 }

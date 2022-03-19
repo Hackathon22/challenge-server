@@ -1,7 +1,6 @@
 package net
 
-import game.ClientSession
-import net.packets.DeltaSnapshotPacket
+import game.DesktopClient
 import org.junit.jupiter.api.Test
 
 class TestSnapshotUpdate {
@@ -12,7 +11,7 @@ class TestSnapshotUpdate {
 
         val server = ServerSession()
 
-        val client = object : ClientSession() {
+        val client = object : DesktopClient() {
 
         }
         server.start()

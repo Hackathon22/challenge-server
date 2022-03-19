@@ -7,6 +7,8 @@ import core.System
 import game.EntityRegistry
 import java.util.*
 
+data class GameResult(val team: Int, val username: String, val score: Float, val won: Boolean)
+
 class ScoreSystem : System() {
 
     private var _gameTime: Float = 0.0f
@@ -96,6 +98,37 @@ class ScoreSystem : System() {
             _removedEntities.add(entity)
     }
 
+    fun gameOver(): Boolean {
+        return _endOfGame
+    }
+
+    fun results(instance: Instance): List<GameResult> {
+        // checks which team won first
+        var winningTeam = 0
+        var winningScore = 0f
+        entities.forEach {
+            val scoreComponent = instance.getComponent<ScoreComponent>(it)
+            if (scoreComponent.score > winningScore) {
+                winningScore = scoreComponent.score
+                winningTeam = scoreComponent.team
+            }
+        }
+        // sends the score for each team
+        val results = ArrayList<GameResult>()
+        entities.forEach {
+            val scoreComponent = instance.getComponent<ScoreComponent>(it)
+            results.add(
+                GameResult(
+                    scoreComponent.team,
+                    scoreComponent.username,
+                    scoreComponent.score,
+                    winningTeam == scoreComponent.team
+                )
+            )
+        }
+        return results
+    }
+
 }
 
 class SpawnerSystem : System() {
@@ -127,7 +160,12 @@ class SpawnerSystem : System() {
         }
     }
 
-    fun spawn(instance: Instance, username: String, team: Int, controllerType: ControllerType) : Entity {
+    fun spawn(
+        instance: Instance,
+        username: String,
+        team: Int,
+        controllerType: ControllerType
+    ): Entity {
         val characterComponents = EntityRegistry.loadEntity("baseCharacter")
         val controllerComponent = CommandComponent(controllerType = controllerType)
         val entity = instance.createEntity()

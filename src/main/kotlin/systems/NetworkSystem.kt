@@ -1,7 +1,10 @@
 package systems
 
 import components.NetworkComponent
-import core.*
+import core.Entity
+import core.IComponent
+import core.Instance
+import core.System
 import java.util.*
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1

@@ -5,7 +5,10 @@ import com.badlogic.gdx.Input
 import com.badlogic.gdx.InputProcessor
 import com.badlogic.gdx.math.Vector3
 import components.*
-import core.*
+import core.Entity
+import core.Instance
+import core.System
+import core.Vec3F
 import java.util.concurrent.LinkedBlockingQueue
 
 class InputSystem : System(), InputProcessor {

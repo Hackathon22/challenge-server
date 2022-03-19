@@ -7,7 +7,6 @@ import components.DynamicComponent
 import components.TransformComponent
 import core.*
 import java.util.*
-import kotlin.collections.HashMap
 import kotlin.math.PI
 
 class MovementSystem : System() {

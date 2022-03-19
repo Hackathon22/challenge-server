@@ -1,11 +1,8 @@
 package components
 
 import core.IComponent
-import core.NoArg
-import core.Vec2I
 import core.Vec3F
 import java.util.*
-import javax.naming.ldap.Control
 
 /**
  * Which kind on controller has impact on the command component?
