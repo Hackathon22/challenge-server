@@ -341,7 +341,7 @@ open class WindowlessClient(
     private fun addAgent() {
         val agentData = (_aiSystem as PythonAISystem).addAgent(_instance)
         if (agentData.valid) {
-            (_spawnerSystem as SpawnerSystem).spawn(_instance, agentData.username, agentData.team, ControllerType.AI)
+            (_spawnerSystem as SpawnerSystem).spawn(_instance, agentData.username, agentData.team, ControllerType.AI, true)
         }
         else {
             throw Exception("Error establishing a python agent.")

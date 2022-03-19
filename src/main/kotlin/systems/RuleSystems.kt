@@ -164,8 +164,10 @@ class SpawnerSystem : System() {
         instance: Instance,
         username: String,
         team: Int,
-        controllerType: ControllerType
+        controllerType: ControllerType,
+        windowless: Boolean = false
     ): Entity {
+        TODO("Implement windowless version of the character.")
         val characterComponents = EntityRegistry.loadEntity("baseCharacter")
         val controllerComponent = CommandComponent(controllerType = controllerType)
         val entity = instance.createEntity()

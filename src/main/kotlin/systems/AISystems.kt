@@ -121,6 +121,7 @@ class PythonAISystem : System() {
         try {
             println("Waiting for an agent to connect on port $_port.")
             val client = _serverSocket.accept()
+            println("Client accepted with address: ${client.inetAddress}")
             val inputStream = BufferedReader(InputStreamReader(client.getInputStream()))
 
             // gets the username, this operation is blocking and waits for the python script to connect
