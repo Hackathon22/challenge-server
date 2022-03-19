@@ -4,6 +4,7 @@ import threading
 import typing
 import socket
 import time
+import json
 
 JAR_FILE = 'challenge.jar'
 COMMANDS_PER_SECOND = 4
@@ -26,9 +27,10 @@ def challenge_thread_work():
 
 class AIAgent:
 
-	def __init__(self, username : str, team: int):
+	def __init__(self, username : str, team: int, ai: typing.Callable[[], str]):
 		self.username = username
 		self.team = team
+		self.ai = ai
 		self._socket = None
 		self._thread = None
 
@@ -45,12 +47,26 @@ class AIAgent:
 			message += '\n'
 		self._socket.sendall(message.encode('UTF-8'))
 
+
+	def _receive_message(self) -> str:
+		message = _socket.receive(32768).decode('UTF-8')
+		parsed_message = json.loads(message)
+		print(f'Message received: {parsed_message}')
+
 	def start(self):
 		self._thread = threading.Thread(target=_work)
 
 	def _work(self):
-		pass
+		should_stop = False
+		while not should_stop:
+			message = self._receive_message()
+			# TODO: Parse message
+			# TODO: act accordingly
+			# TODO: stop the worker if there is a problem
 
+
+def my_ai(args**):
+	return 'Nothing'
 
 if __name__ == '__main__':
 	print('Starting the challenge server.')
@@ -60,10 +76,10 @@ if __name__ == '__main__':
 	print('Waiting 2 seconds for the server to launch.')
 	time.sleep(2)
 
-	blue_agent = AIAgent(BLUE_USERNAME, BLUE_TEAM)
+	blue_agent = AIAgent(BLUE_USERNAME, BLUE_TEAM, my_ai)
 	blue_agent.connect()
 
-	red_agent = AIAgent(RED_USERNAME, RED_TEAM)
+	red_agent = AIAgent(RED_USERNAME, RED_TEAM, my_ai)
 	red_agent.connect()
 
 	print('Joining the challenge thread!')

@@ -167,14 +167,21 @@ class SpawnerSystem : System() {
         controllerType: ControllerType,
         windowless: Boolean = false
     ): Entity {
-        TODO("Implement windowless version of the character.")
-        val characterComponents = EntityRegistry.loadEntity("baseCharacter")
-        val controllerComponent = CommandComponent(controllerType = controllerType)
         val entity = instance.createEntity()
-        characterComponents.forEach {
-            instance.addComponentDynamic(entity, it)
+        if (windowless) {
+            val playerComponents = EntityRegistry.loadEntity("basePlayerWindowless")
+            playerComponents.forEach {
+                instance.addComponentDynamic(entity, it)
+            }
         }
-        instance.addComponentDynamic(entity, controllerComponent)
+        else {
+            val characterComponents = EntityRegistry.loadEntity("baseCharacter")
+            val controllerComponent = CommandComponent(controllerType = controllerType)
+            characterComponents.forEach {
+                instance.addComponentDynamic(entity, it)
+            }
+            instance.addComponentDynamic(entity, controllerComponent)
+        }
 
         val scoreComponent = instance.getComponent<ScoreComponent>(entity)
         scoreComponent.team = team
