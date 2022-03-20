@@ -1,5 +1,7 @@
 package systems
 
+import com.google.gson.Gson
+import com.google.gson.annotations.SerializedName
 import components.*
 import core.*
 import java.io.BufferedReader
@@ -9,37 +11,71 @@ import java.io.PrintWriter
 import java.net.ServerSocket
 import java.net.Socket
 
+interface JSONConvertable {
+    fun toJSON() : String = Gson().toJson(this)
+}
 
-data class PlayerData(val pos: Vec3F, val speed: Vec3F, val state: States, val health: Float)
+data class PlayerData(@SerializedName("pos") val pos: Vec3F,
+                      @SerializedName("speed") val speed: Vec3F,
+                      @SerializedName("state") val state: States,
+                      @SerializedName("health") val health: Float,
+                      @SerializedName("score") val score: Float) : JSONConvertable
+
+data class ProjectileData(@SerializedName("pos") val pos: Vec3F,
+                          @SerializedName("speed") val speed: Vec3F) : JSONConvertable
+
+data class SnapshotData(@SerializedName("controlledPlayer") val controlledPlayer: PlayerData,
+                        @SerializedName("otherPlayers") val otherPlayers: List<PlayerData>,
+                        @SerializedName("projectiles") val projectiles: List<ProjectileData>) : JSONConvertable
 
 class PythonClient(
     private val client: Socket,
     private val username: String,
     private val entity: Entity,
-    private val team: Int
+    private val team: Int,
+    private var time: Float
 ) {
     fun pollActions(instance: Instance): StateCommand {
+        // streams to send/receive messages
         val output = PrintWriter(client.getOutputStream(), true)
         val input = BufferedReader(InputStreamReader(client.getInputStream()))
 
-        // poll the game state for the AI
+        // Retrieves the game state and serialized it before sending it to the python AI.
+        val snapshotData = gatherSnapshot(instance)
+        // serializes the data
+        val serializedData = snapshotData.toJSON()
+        // sends the data to the client
+        output.write(serializedData)
 
-        // gets all the entities
-        val allEntities = instance.getAllEntities()
+        // starts the countdown of the timer
 
-        val projectiles = ArrayList<Pair<Vec3F, Vec3F>>()
-        allEntities.forEach {
+        TODO("Implement countdown")
+        
+        val serializedResult = input.readLine()
+
+        // parse the result
+
+        // returns the command
+    }
+
+    private fun gatherSnapshot(instance: Instance) : SnapshotData {
+
+        // Retrieves all the projectiles in the game
+        val projectileSystem = instance.getSystem<ProjectileSystem>()
+        val projectiles = ArrayList<ProjectileData>()
+        projectileSystem.entities.forEach {
             val projectileComponent =
                 instance.getComponentDynamicUnsafe(it, ProjectileComponent::class)
             if (projectileComponent != null) {
                 val transformComponent = instance.getComponent<TransformComponent>(it)
                 val dynamicComponent = instance.getComponent<DynamicComponent>(it)
-                projectiles.add(Pair(transformComponent.pos, dynamicComponent.speed))
+                projectiles.add(ProjectileData(transformComponent.pos, dynamicComponent.speed))
             }
         }
 
+        val scoreSystem = instance.getSystem<ScoreSystem>()
         val otherPlayers = ArrayList<PlayerData>()
-        allEntities.forEach {
+        scoreSystem.entities.forEach {
             val characterComponent =
                 instance.getComponentDynamicUnsafe(it, CharacterComponent::class)
             if (characterComponent != null) {
@@ -47,33 +83,15 @@ class PythonClient(
                 val transformComponent = instance.getComponent<TransformComponent>(it)
                 val dynamicComponent = instance.getComponent<DynamicComponent>(it)
                 val stateComponent = instance.getComponent<StateComponent>(it)
+                val scoreComponent = instance.getComponent<ScoreComponent>(it)
                 val playerData = PlayerData(
                     transformComponent.pos,
                     dynamicComponent.speed,
                     stateComponent.state,
-                    characterComponentCasted.health
+                    characterComponentCasted.health,
+                    scoreComponent.score
                 )
                 otherPlayers.add(playerData)
-            }
-        }
-
-        val walls = ArrayList<Pair<Vec3F, Vec2F>>()
-        allEntities.forEach {
-            val bodyComponent = instance.getComponentDynamicUnsafe(it, BodyComponent::class)
-            if (bodyComponent != null) {
-                val bodyComponentCasted = bodyComponent as BodyComponent
-                if (bodyComponentCasted.static) {
-                    val transformComponent = instance.getComponent<TransformComponent>(it)
-                    walls.add(
-                        Pair(
-                            transformComponent.pos,
-                            Vec2F(
-                                bodyComponent.width * transformComponent.scale.x,
-                                bodyComponent.height * transformComponent.scale.y
-                            )
-                        )
-                    )
-                }
             }
         }
 
@@ -81,15 +99,15 @@ class PythonClient(
         val controlledPlayerDynamicComponent = instance.getComponent<DynamicComponent>(entity)
         val controlledPlayerCharacterComponent = instance.getComponent<CharacterComponent>(entity)
         val controlledPlayerStateComponent = instance.getComponent<StateComponent>(entity)
+        val controlledPlayerScoreComponent = instance.getComponent<ScoreComponent>(entity)
         val controllerPlayer = PlayerData(
             controlledPlayerTransformComponent.pos,
             controlledPlayerDynamicComponent.speed,
             controlledPlayerStateComponent.state,
-            controlledPlayerCharacterComponent.health
+            controlledPlayerCharacterComponent.health,
+            controlledPlayerScoreComponent.score
         )
-
-        TODO("Serialize the data")
-        TODO("ask for action")
+        return SnapshotData(controllerPlayer, otherPlayers, projectiles)
     }
 
     fun abort() {
@@ -129,10 +147,12 @@ class PythonAISystem : System() {
             val team = Integer.parseInt(inputStream.readLine())
             if (username != null && username != "" && username != "\n") {
                 val entity = instance.createEntity()
-                _clients[username] = PythonClient(client, username, entity, team)
+                _clients[username] = PythonClient(client, username, entity, team, _aiTime!!)
                 _usernameToEntity[username] = entity
-                println("Agent connected with username: $username and team: $team." +
-                        " Assigned to player entity: $entity")
+                println(
+                    "Agent connected with username: $username and team: $team." +
+                            " Assigned to player entity: $entity"
+                )
                 return AgentData(true, username, team, entity)
             }
             return AgentData(false, "", 0, 0)

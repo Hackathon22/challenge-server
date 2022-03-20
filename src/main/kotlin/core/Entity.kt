@@ -1,6 +1,8 @@
 package core
 
 import java.util.*
+import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
 
 typealias Entity = Int
 

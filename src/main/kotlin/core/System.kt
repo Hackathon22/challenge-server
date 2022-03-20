@@ -5,7 +5,7 @@ import kotlin.reflect.full.createInstance
 
 abstract class System(override val observers: ArrayList<IObserver> = ArrayList()) : IObserver, IObservable {
     // set containing unique values, with an importance in order
-    protected var entities = LinkedHashSet<Entity>()
+    var entities = LinkedHashSet<Entity>()
 
     protected var _initialized = false
 

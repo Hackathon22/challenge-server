@@ -65,7 +65,7 @@ class AIAgent:
 			# TODO: stop the worker if there is a problem
 
 
-def my_ai(args**):
+def my_ai(**kwargs):
 	return 'Nothing'
 
 if __name__ == '__main__':

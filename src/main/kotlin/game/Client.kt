@@ -157,13 +157,22 @@ open class DesktopClient(private val gameFile: String? = null, private val gameT
         }
 
         // loads two players
+        val player0Entity = _instance.createEntity()
         (_spawnerSystem as SpawnerSystem).spawn(
             _instance,
+            player0Entity,
             "player_1",
             0,
             ControllerType.LOCAL_INPUT
         )
-        (_spawnerSystem as SpawnerSystem).spawn(_instance, "player_2", 1, ControllerType.AI)
+        val player1Entity = _instance.createEntity()
+        (_spawnerSystem as SpawnerSystem).spawn(
+            _instance,
+            player1Entity,
+            "player_2",
+            1,
+            ControllerType.AI
+        )
 
         _running.set(true)
     }
@@ -208,7 +217,7 @@ open class WindowlessClient(
     private val gameFile: String,
     private val gameTime: Float = 60f,
     private val aiTime: Float = 60f,
-    private val actionsPerSecond : Float = 4f
+    private val actionsPerSecond: Float = 4f
 ) {
 
     private val _instance = Instance()
@@ -229,7 +238,7 @@ open class WindowlessClient(
 
     private val _spawnerSystem: System = _instance.registerSystem<SpawnerSystem>()
 
-    private val _aiSystem : System = _instance.registerSystem<PythonAISystem>()
+    private val _aiSystem: System = _instance.registerSystem<PythonAISystem>()
 
     init {
         // registers components
@@ -341,9 +350,15 @@ open class WindowlessClient(
     private fun addAgent() {
         val agentData = (_aiSystem as PythonAISystem).addAgent(_instance)
         if (agentData.valid) {
-            (_spawnerSystem as SpawnerSystem).spawn(_instance, agentData.username, agentData.team, ControllerType.AI, true)
-        }
-        else {
+            (_spawnerSystem as SpawnerSystem).spawn(
+                _instance,
+                agentData.entity,
+                agentData.username,
+                agentData.team,
+                ControllerType.AI,
+                true
+            )
+        } else {
             throw Exception("Error establishing a python agent.")
         }
     }

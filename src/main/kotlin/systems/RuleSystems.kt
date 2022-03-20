@@ -162,12 +162,12 @@ class SpawnerSystem : System() {
 
     fun spawn(
         instance: Instance,
+        entity: Entity,
         username: String,
         team: Int,
         controllerType: ControllerType,
-        windowless: Boolean = false
+        windowless: Boolean = false,
     ): Entity {
-        val entity = instance.createEntity()
         if (windowless) {
             val playerComponents = EntityRegistry.loadEntity("basePlayerWindowless")
             playerComponents.forEach {
