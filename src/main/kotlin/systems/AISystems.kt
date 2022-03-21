@@ -16,7 +16,7 @@ interface JSONConvertable {
     fun toJSON(): String = Gson().toJson(this)
 }
 
-inline fun <reified T: JSONConvertable> String.toObject(): T = Gson().fromJson(this, T::class.java)
+inline fun <reified T : JSONConvertable> String.toObject(): T = Gson().fromJson(this, T::class.java)
 
 data class PlayerData(
     @SerializedName("pos") val pos: Vec3F,
@@ -38,18 +38,14 @@ data class SnapshotData(
     @SerializedName("projectiles") val projectiles: List<ProjectileData>
 ) : JSONConvertable
 
-data class ScoreResult(
-    @SerializedName("username") val username: String,
-    @SerializedName("team") val team: Int,
-    @SerializedName("score") val score: Float
-)
-
 @NoArg
 open class AICommand(@SerializedName("command_type") val commandType: String) : JSONConvertable
 
-data class AIMoveCommand(@SerializedName("move_direction") val moveDirection : List<Float>) : AICommand("MOVE"), JSONConvertable
+data class AIMoveCommand(@SerializedName("move_direction") val moveDirection: List<Float>) :
+    AICommand("MOVE"), JSONConvertable
 
-data class AIShootCommand(@SerializedName("shoot_angle") val shootDirection : Float) : AICommand("SHOOT"), JSONConvertable
+data class AIShootCommand(@SerializedName("shoot_angle") val shootDirection: Float) :
+    AICommand("SHOOT"), JSONConvertable
 
 enum class MessageHeaders : JSONConvertable {
     ASK_COMMAND,
@@ -65,7 +61,10 @@ data class AskCommandMessage(@SerializedName("snapshot") val snapshot: SnapshotD
 data class GameFinishedMessage(@SerializedName("score") val score: List<ScoreResult>) :
     AIMessage(MessageHeaders.GAME_FINISHED), JSONConvertable
 
-data class AbortMessage(@SerializedName("error") val message: String) :
+data class AbortMessage(
+    @SerializedName("error") val message: String,
+    @SerializedName("blame") val blame: String
+) :
     AIMessage(MessageHeaders.ABORT), JSONConvertable
 
 class PythonClient(
@@ -87,7 +86,7 @@ class PythonClient(
         val serializedData = askCommandMessage.toJSON()
 
         // sends the data to the client
-        output.println(serializedData+"\n")
+        output.println(serializedData + "\n")
         output.flush()
 
         val serializedResult = input.readLine()
@@ -167,12 +166,20 @@ class PythonClient(
         return SnapshotData(controllerPlayer, otherPlayers, projectiles)
     }
 
-    fun abort() {
-        TODO("implement")
+    fun abort(message: String, blame: String) {
+        val abortMessage = AbortMessage(message, blame)
+        val serializedMessage = abortMessage.toJSON()
+        val output = PrintWriter(client.getOutputStream(), true)
+        output.println(serializedMessage + "\n")
+        client.close()
     }
 
-    fun finished(results: List<GameResult>) {
-        TODO("implement")
+    fun finished(results: List<ScoreResult>) {
+        val gameFinishedMessage = GameFinishedMessage(results)
+        val serializedMessage = gameFinishedMessage.toJSON()
+        val output = PrintWriter(client.getOutputStream(), true)
+        output.println(serializedMessage + "\n")
+        client.close()
     }
 }
 
@@ -214,7 +221,7 @@ class PythonAISystem : System() {
             }
             return AgentData(false, "", 0, 0)
         } catch (exc: IOException) {
-            abort()
+            abort("Exception when connecting the client.", "server")
             return AgentData(false, "", 0, 0)
         }
     }
@@ -242,11 +249,14 @@ class PythonAISystem : System() {
                 if (commandComponent.controllerType == ControllerType.AI) {
                     commandComponent.commands.add(command)
                 }
-            }
-            catch (exc: Exception) {
+            } catch (exc: Exception) {
                 println("Exception occurred when parsing the action for user: $username")
                 val scoreSystem = instance.getSystem<ScoreSystem>()
                 scoreSystem.forceFinishGame(instance, client.entity)
+                abort(
+                    "Exception occurred when parsing the action for user $username:\n${exc}",
+                    "player: $username"
+                )
             }
         }
     }
@@ -257,13 +267,13 @@ class PythonAISystem : System() {
     override fun onEntityRemoved(entity: Entity) {
     }
 
-    private fun abort() {
+    private fun abort(message: String, blame: String) {
         _clients.forEach { (_, session) ->
-            session.abort()
+            session.abort(message, blame)
         }
     }
 
-    fun finish(results: List<GameResult>) {
+    fun finish(results: List<ScoreResult>) {
         _clients.forEach { (_, session) ->
             session.finished(results)
         }

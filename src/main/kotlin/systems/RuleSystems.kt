@@ -1,14 +1,17 @@
 package systems
 
+import com.google.gson.annotations.SerializedName
 import components.*
 import core.Entity
 import core.Instance
 import core.System
 import game.EntityRegistry
-import render.invalidSpriteName
 import java.util.*
 
-data class GameResult(val team: Int, val username: String, val score: Float, val won: Boolean)
+data class ScoreResult(@SerializedName("team") var team: Int,
+                       @SerializedName("username") val username: String,
+                       @SerializedName("score") var score: Float,
+                       @SerializedName("won") val won: Boolean)
 
 class ScoreSystem : System() {
 
@@ -116,29 +119,33 @@ class ScoreSystem : System() {
         _endOfGame = true
     }
 
-    fun results(instance: Instance): List<GameResult> {
+    fun results(instance: Instance): List<ScoreResult> {
         // checks which team won first
         var winningTeam = 0
         var winningScore = 0f
         entities.forEach {
-            val scoreComponent = instance.getComponent<ScoreComponent>(it)
-            if (scoreComponent.score > winningScore) {
-                winningScore = scoreComponent.score
-                winningTeam = scoreComponent.team
+            val scoreComponent = instance.getComponentDynamicUnsafe(it, ScoreComponent::class)
+            if (scoreComponent is ScoreComponent) {
+                if (scoreComponent.score > winningScore) {
+                    winningScore = scoreComponent.score
+                    winningTeam = scoreComponent.team
+                }
             }
         }
         // sends the score for each team
-        val results = ArrayList<GameResult>()
+        val results = ArrayList<ScoreResult>()
         entities.forEach {
-            val scoreComponent = instance.getComponent<ScoreComponent>(it)
-            results.add(
-                GameResult(
-                    scoreComponent.team,
-                    scoreComponent.username,
-                    scoreComponent.score,
-                    winningTeam == scoreComponent.team
+            val scoreComponent = instance.getComponentDynamicUnsafe(it, ScoreComponent::class)
+            if (scoreComponent is ScoreComponent) {
+                results.add(
+                    ScoreResult(
+                        scoreComponent.team,
+                        scoreComponent.username,
+                        scoreComponent.score,
+                        winningTeam == scoreComponent.team
+                    )
                 )
-            )
+            }
         }
         return results
     }

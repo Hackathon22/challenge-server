@@ -299,6 +299,7 @@ open class WindowlessClient(
 
         _scoreSystem.initialize(gameTime)
         val scoreSignature = Signature() // accepts all kind of entities
+
         _instance.setSystemSignature<ScoreSystem>(scoreSignature)
 
         _timerSystem.initialize()

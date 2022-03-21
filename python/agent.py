@@ -90,6 +90,12 @@ class AIAgent:
 		self._address = address
 		self._socket = None
 		self._thread = None
+		
+		self.score = None
+		
+		self.aborted = False
+		self.abort_message = None
+		self.abort_blame = None
 
 	def _connect(self, port: int = 2049, address: str = '127.0.0.1'):
 		self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -133,7 +139,10 @@ class AIAgent:
 							   float(projectile_data['speed']['z']))
 		return ProjectileData(projectile_position, projectile_speed)
 
-	def _send_command(self, snapshot: typing.Dict) -> str:
+	def _parse_finishing_results(self, results: typing.Dict):
+		pass
+
+	def _send_command(self, snapshot: typing.Dict):
 		# Parses the message
 		controlled_player_data = snapshot['controlledPlayer']
 		controlled_player = self._parse_player_data(controlled_player_data)
@@ -185,7 +194,6 @@ class AIAgent:
 
 
 def my_ai(gamestate: SnapshotData):
-	print(f'Current gamestate: {gamestate}')
 	return ShootCommand(270.0)
 #	return MoveCommand((0.0, -1.0, 0.0))
 
@@ -211,4 +219,5 @@ if __name__ == '__main__':
 
 	print('Joining the challenge thread.')
 	challenge_thread.join()
+	print('Challenge thread joined.')
 
