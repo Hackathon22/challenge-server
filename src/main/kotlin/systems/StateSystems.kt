@@ -56,7 +56,7 @@ private class IdleState(entity: Entity) : State(entity) {
             if (!command.release) return MovingState(command.direction, _entity)
         } else if (command is ShootCommand) {
             // returns shooting state
-            return ShootingState(_entity)
+            return ShootingState(_entity, command.angle)
         } else if (command is CursorMovedCommand) {
             rotate(instance, command.worldPosition)
         }
@@ -94,7 +94,7 @@ private class MovingState(private var _direction: Vec3F, entity: Entity) : State
 
     override fun onCommand(instance: Instance, command: Command): State? {
         when (command) {
-            is ShootCommand -> return ShootingState(_entity)
+            is ShootCommand -> return ShootingState(_entity, command.angle)
             is MoveCommand -> changeDirection(instance, command.direction)
             is CursorMovedCommand -> rotate(instance, command.worldPosition)
         }
@@ -146,7 +146,7 @@ private class MovingState(private var _direction: Vec3F, entity: Entity) : State
     }
 }
 
-private class ShootingState(entity: Entity) : State(entity) {
+private class ShootingState(entity: Entity, val angle: Float? = null) : State(entity) {
 
     override val state: States
         get() = States.SHOOTING
@@ -175,9 +175,8 @@ private class ShootingState(entity: Entity) : State(entity) {
 
     override fun onStateBegin(instance: Instance) {
         setState(instance)
-        val weaponComponent = instance.getComponent<WeaponComponent>(_entity) ?: return
         val weaponSystem = instance.getSystem<WeaponSystem>()
-        _recoveryTime = weaponSystem.shoot(instance, _entity)
+        _recoveryTime = weaponSystem.shoot(instance, _entity, angle)
     }
 
     override fun onStateEnd(instance: Instance) {

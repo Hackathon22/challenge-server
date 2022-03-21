@@ -40,7 +40,7 @@ class CursorMovedCommand(val worldPosition: Vec3F) : Command()
 /**
  * Called when asking to shoot
  */
-class ShootCommand : StateCommand() {
+class ShootCommand(val angle: Float? = null) : StateCommand() {
 }
 
 

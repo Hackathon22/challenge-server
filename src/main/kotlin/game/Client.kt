@@ -11,6 +11,9 @@ import java.util.concurrent.atomic.AtomicBoolean
 const val BASE_WIDTH = 1200
 const val BASE_HEIGHT = 800
 
+
+var WINDOW_MODE = true
+
 open class DesktopClient(private val gameFile: String? = null, private val gameTime: Float = 60f) :
     ApplicationAdapter(), IObservable {
 
@@ -241,6 +244,9 @@ open class WindowlessClient(
     private val _aiSystem: System = _instance.registerSystem<PythonAISystem>()
 
     init {
+        // toggles-off the windowed flag
+        WINDOW_MODE = false
+
         // registers components
         _instance.registerComponent<TransformComponent>()
         _instance.registerComponent<DynamicComponent>()

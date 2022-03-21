@@ -6,6 +6,7 @@ import socket
 import time
 import json
 from dataclasses import dataclass
+from abc import ABC, abstractmethod
 
 JAR_FILE = 'challenge.jar'
 COMMANDS_PER_SECOND = 4
@@ -50,6 +51,35 @@ class SnapshotData:
 	projectiles: typing.List[ProjectileData]
 
 
+@dataclass
+class Command(ABC, json.JSONEncoder):
+	'''Base class for all the commands'''
+	command_type: str
+
+@dataclass
+class MoveCommand(Command):
+	'''Asks the player to move. The direction will be normalized inside the game server 
+	so there is no need to have a norm higher than 1 ;)
+	Giving a move direction with a norm equal to 0 will put the character on IDLE state.
+	'''
+	move_direction: typing.Tuple[float, float, float]
+	
+	def __init__(self, move_direction):
+		self.command_type = 'MOVE'
+		self.move_direction = move_direction
+
+@dataclass
+class ShootCommand(Command):
+	'''
+	Asks the player where to shoot. The angle needs to be given in degrees and are directed
+	counterclockwise between 0 and 360 deg.
+	'''
+	shoot_angle: float
+
+	def __init__(self, shoot_angle):
+		self.command_type = 'SHOOT'
+		self.shoot_angle = shoot_angle
+
 class AIAgent:
 
 	def __init__(self, username : str, team: int, ai: typing.Callable[[], str], address: str = '127.0.0.1', port: int = 2049):
@@ -78,26 +108,56 @@ class AIAgent:
 	def _receive_message(self) -> typing.Dict:
 		message = self._socket.recv(1024).decode('UTF-8')
 		parsed_message = json.loads(message)
-		print(f'Json received: {parsed_message}')
 		return parsed_message
 
-	def _parse_player_data(self, data: typing.Dict) -> PlayerData:
-		pass
+	@staticmethod
+	def _parse_player_data(player_data: typing.Dict) -> PlayerData:
+		player_position = (float(player_data['pos']['x']), 
+									  float(player_data['pos']['x']),
+									  float(player_data['pos']['y']))
+		player_speed = (float(player_data['speed']['x']),
+								   float(player_data['speed']['y']),
+								   float(player_data['speed']['z']))
+		player_health = float(player_data['health'])
+		player_team = int(player_data['team'])
+		player_score = float(player_data['score'])
+		return PlayerData(player_position, player_speed, player_health, player_team, player_score)
 
+	@staticmethod
+	def _parse_projectile_data(projectile_data: typing.Dict) -> ProjectileData:
+		projectile_position = (float(projectile_data['pos']['x']),
+							   float(projectile_data['pos']['y']),
+							   float(projectile_data['pos']['z']))
+		projectile_speed =    (float(projectile_data['speed']['x']),
+							   float(projectile_data['speed']['y']),
+							   float(projectile_data['speed']['z']))
+		return ProjectileData(projectile_position, projectile_speed)
 
 	def _send_command(self, snapshot: typing.Dict) -> str:
 		# Parses the message
 		controlled_player_data = snapshot['controlledPlayer']
-		controlled_player_position = (float(controlled_player_data['pos']['x']), 
-									  float(controlled_player_data['pos']['x']),
-									  float(controlled_player_data['pos']['y']))
-		controlled_player_speed = (float(controlled_player_data['speed']['x']),
-								   float(controlled_player_data['speed']['y']),
-								   float(controlled_player_data['speed']['z']))
-		controlled_player_health = float(controlled_player_data['health'])
-		controlled_player_team = int(controlled_player_data['team'])
-		controlled_player_score = float(controlled_player_data['score'])
+		controlled_player = self._parse_player_data(controlled_player_data)
+		other_players_data = snapshot['otherPlayers']
+		
+		other_players = []
+		for player_data in other_players_data:
+			other_players.append(self._parse_player_data(player_data))
 
+		projectiles = []
+		projectiles_data = snapshot['projectiles']
+		for projectile_data in projectiles_data:
+			projectiles.append(self._parse_projectile_data(projectile_data))
+
+		snapshot = SnapshotData(controlled_player, other_players, projectiles)
+
+		# Asks for the command to the AI
+		command = self.ai(snapshot)
+
+		# Sends the command to the server
+		serialized_command = json.dumps(command.__dict__)
+#		print(f'Sending command: {serialized_command}')
+
+		self._send_message(serialized_command)
 
 	def start(self):
 		self._thread = threading.Thread(target=self._work)
@@ -115,7 +175,6 @@ class AIAgent:
 			if message['header'] == 'ASK_COMMAND':
 				# TODO remove
 				self._send_command(message['snapshot'])
-				should_stop = True
 			elif message['header'] == 'GAME_FINISHED':
 				should_stop = True
 			elif message['header'] == 'ABORT':
@@ -125,8 +184,10 @@ class AIAgent:
 			# TODO: stop the worker if there is a problem
 
 
-def my_ai(**kwargs):
-	return 'Nothing'
+def my_ai(gamestate: SnapshotData):
+	print(f'Current gamestate: {gamestate}')
+	return ShootCommand(270.0)
+#	return MoveCommand((0.0, -1.0, 0.0))
 
 if __name__ == '__main__':
 	print('Starting the challenge server.')

@@ -4,9 +4,8 @@ import com.badlogic.gdx.math.MathUtils.*
 import components.*
 import core.*
 import game.EntityRegistry
+import game.WINDOW_MODE
 import java.util.*
-import kotlin.collections.HashMap
-import kotlin.collections.LinkedHashSet
 import kotlin.math.exp
 import kotlin.math.sqrt
 
@@ -32,12 +31,12 @@ class WeaponSystem : System() {
      * Creates a projectile, giving to it a certain angle and speed. Then adds the projectile to the
      * instance entities.
      */
-    fun shoot(instance: Instance, entity: Entity): Float {
+    fun shoot(instance: Instance, entity: Entity, angle: Float?): Float {
         // checks for entity weapon component
         val entityWeaponComponent = instance.getComponent<WeaponComponent>(entity)
         val entityTransformComponent = instance.getComponent<TransformComponent>(entity)
 
-        val shooterAngle = entityTransformComponent.rot.z
+        val shooterAngle = angle ?: entityTransformComponent.rot.z
 
         // initializes the projectile
         val projectile = instance.createEntity()
@@ -70,14 +69,15 @@ class WeaponSystem : System() {
             entityWeaponComponent.projectile.height
         )
 
-        val spriteComponent = SpriteComponent(entityWeaponComponent.projectileSprite)
-
-
         instance.addComponent(projectile, transformComponent)
         instance.addComponent(projectile, dynamicComponent)
         instance.addComponent(projectile, projectileComponent)
-        instance.addComponent(projectile, spriteComponent)
         instance.addComponent(projectile, bodyComponent)
+
+        if (WINDOW_MODE) {
+            val spriteComponent = SpriteComponent(entityWeaponComponent.projectileSprite)
+            instance.addComponent(projectile, spriteComponent)
+        }
 
         return entityWeaponComponent.coolDown
     }
@@ -145,7 +145,10 @@ class ProjectileSystem : System() {
         val components = EntityRegistry.loadEntity("baseExplosion")
         val explosionEntity = instance.createEntity()
         components.forEach {
-            instance.addComponentDynamic(explosionEntity, it)
+            if (it is SpriteComponent && !WINDOW_MODE) {}
+            else {
+                instance.addComponentDynamic(explosionEntity, it)
+            }
         }
 
         // sets explosion position

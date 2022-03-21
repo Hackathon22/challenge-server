@@ -120,7 +120,7 @@ object EntityRegistry {
             maxBounces = 2,
             maxTime = 2.0f  // maximum two seconds
         )
-        return arrayListOf(WeaponComponent(impactInfo, projectileInfo, 0.5f, "rocket"))
+        return arrayListOf(WeaponComponent(impactInfo, projectileInfo, 0.45f, "rocket"))
     }
 
     private fun baseExplosion(): MutableList<IComponent> {

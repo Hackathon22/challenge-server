@@ -5,12 +5,18 @@ import com.google.gson.annotations.SerializedName
 import components.*
 import core.*
 import java.io.*
+import java.lang.Exception
 import java.net.ServerSocket
 import java.net.Socket
 
+
+// JSON serialization solution from
+// https://stackoverflow.com/questions/44117970/kotlin-data-class-from-json-using-gson
 interface JSONConvertable {
     fun toJSON(): String = Gson().toJson(this)
 }
+
+inline fun <reified T: JSONConvertable> String.toObject(): T = Gson().fromJson(this, T::class.java)
 
 data class PlayerData(
     @SerializedName("pos") val pos: Vec3F,
@@ -38,6 +44,13 @@ data class ScoreResult(
     @SerializedName("score") val score: Float
 )
 
+@NoArg
+open class AICommand(@SerializedName("command_type") val commandType: String) : JSONConvertable
+
+data class AIMoveCommand(@SerializedName("move_direction") val moveDirection : List<Float>) : AICommand("MOVE"), JSONConvertable
+
+data class AIShootCommand(@SerializedName("shoot_angle") val shootDirection : Float) : AICommand("SHOOT"), JSONConvertable
+
 enum class MessageHeaders : JSONConvertable {
     ASK_COMMAND,
     GAME_FINISHED,
@@ -58,7 +71,7 @@ data class AbortMessage(@SerializedName("error") val message: String) :
 class PythonClient(
     private val client: Socket,
     private val username: String,
-    private val entity: Entity,
+    val entity: Entity,
     private val team: Int,
     private var time: Float
 ) {
@@ -79,9 +92,25 @@ class PythonClient(
 
         val serializedResult = input.readLine()
 
-        // parse the result
+        // gets the base class from the command
+        val aiCommand = serializedResult.toObject<AICommand>()
 
-        return MoveCommand(Vec3F(0f, 0f, 0f)) // TODO remove placeholder
+        // parses the result
+        return when (aiCommand.commandType) {
+            "MOVE" -> {
+                val moveCommand = serializedResult.toObject<AIMoveCommand>()
+                val direction = moveCommand.moveDirection
+                MoveCommand(Vec3F(direction[0], direction[1], direction[2]))
+            }
+            "SHOOT" -> {
+                val shootCommand = serializedResult.toObject<AIShootCommand>()
+                val angle = shootCommand.shootDirection
+                ShootCommand(angle)
+            }
+            else -> {
+                throw IllegalArgumentException("Invalid command type.")
+            }
+        }
     }
 
     private fun gatherSnapshot(instance: Instance): SnapshotData {
@@ -206,11 +235,18 @@ class PythonAISystem : System() {
     override fun updateLogic(instance: Instance, delta: Float) {
         // gives the game state and ask for each client the action to play (game state command)
         _clients.forEach { (username, client) ->
-            val command = client.pollActions(instance)
-            val entity = _usernameToEntity[username]!!
-            val commandComponent = instance.getComponent<CommandComponent>(entity)
-            if (commandComponent.controllerType == ControllerType.AI) {
-                commandComponent.commands.add(command)
+            try {
+                val command = client.pollActions(instance)
+                val entity = _usernameToEntity[username]!!
+                val commandComponent = instance.getComponent<CommandComponent>(entity)
+                if (commandComponent.controllerType == ControllerType.AI) {
+                    commandComponent.commands.add(command)
+                }
+            }
+            catch (exc: Exception) {
+                println("Exception occurred when parsing the action for user: $username")
+                val scoreSystem = instance.getSystem<ScoreSystem>()
+                scoreSystem.forceFinishGame(instance, client.entity)
             }
         }
     }

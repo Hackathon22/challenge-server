@@ -5,6 +5,7 @@ import core.Entity
 import core.Instance
 import core.System
 import game.EntityRegistry
+import render.invalidSpriteName
 import java.util.*
 
 data class GameResult(val team: Int, val username: String, val score: Float, val won: Boolean)
@@ -100,6 +101,19 @@ class ScoreSystem : System() {
 
     fun gameOver(): Boolean {
         return _endOfGame
+    }
+
+    fun forceFinishGame(instance: Instance, loser: Entity) {
+        entities.forEach {
+            val scoreComponent = instance.getComponent<ScoreComponent>(it)
+            if (it != loser) {
+                scoreComponent.score = 1.0f
+            }
+            else {
+                scoreComponent.score = 0.0f
+            }
+        }
+        _endOfGame = true
     }
 
     fun results(instance: Instance): List<GameResult> {
