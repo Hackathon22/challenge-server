@@ -4,29 +4,56 @@ import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 import components.*
 import core.*
-import java.io.BufferedReader
-import java.io.IOException
-import java.io.InputStreamReader
-import java.io.PrintWriter
+import java.io.*
 import java.net.ServerSocket
 import java.net.Socket
 
 interface JSONConvertable {
-    fun toJSON() : String = Gson().toJson(this)
+    fun toJSON(): String = Gson().toJson(this)
 }
 
-data class PlayerData(@SerializedName("pos") val pos: Vec3F,
-                      @SerializedName("speed") val speed: Vec3F,
-                      @SerializedName("state") val state: States,
-                      @SerializedName("health") val health: Float,
-                      @SerializedName("score") val score: Float) : JSONConvertable
+data class PlayerData(
+    @SerializedName("pos") val pos: Vec3F,
+    @SerializedName("speed") val speed: Vec3F,
+    @SerializedName("state") val state: States,
+    @SerializedName("health") val health: Float,
+    @SerializedName("team") val team: Int,
+    @SerializedName("score") val score: Float
+) : JSONConvertable
 
-data class ProjectileData(@SerializedName("pos") val pos: Vec3F,
-                          @SerializedName("speed") val speed: Vec3F) : JSONConvertable
+data class ProjectileData(
+    @SerializedName("pos") val pos: Vec3F,
+    @SerializedName("speed") val speed: Vec3F
+) : JSONConvertable
 
-data class SnapshotData(@SerializedName("controlledPlayer") val controlledPlayer: PlayerData,
-                        @SerializedName("otherPlayers") val otherPlayers: List<PlayerData>,
-                        @SerializedName("projectiles") val projectiles: List<ProjectileData>) : JSONConvertable
+data class SnapshotData(
+    @SerializedName("controlledPlayer") val controlledPlayer: PlayerData,
+    @SerializedName("otherPlayers") val otherPlayers: List<PlayerData>,
+    @SerializedName("projectiles") val projectiles: List<ProjectileData>
+) : JSONConvertable
+
+data class ScoreResult(
+    @SerializedName("username") val username: String,
+    @SerializedName("team") val team: Int,
+    @SerializedName("score") val score: Float
+)
+
+enum class MessageHeaders : JSONConvertable {
+    ASK_COMMAND,
+    GAME_FINISHED,
+    ABORT
+}
+
+abstract class AIMessage(@SerializedName("header") val header: MessageHeaders) : JSONConvertable
+
+data class AskCommandMessage(@SerializedName("snapshot") val snapshot: SnapshotData) :
+    AIMessage(MessageHeaders.ASK_COMMAND), JSONConvertable
+
+data class GameFinishedMessage(@SerializedName("score") val score: List<ScoreResult>) :
+    AIMessage(MessageHeaders.GAME_FINISHED), JSONConvertable
+
+data class AbortMessage(@SerializedName("error") val message: String) :
+    AIMessage(MessageHeaders.ABORT), JSONConvertable
 
 class PythonClient(
     private val client: Socket,
@@ -43,22 +70,21 @@ class PythonClient(
         // Retrieves the game state and serialized it before sending it to the python AI.
         val snapshotData = gatherSnapshot(instance)
         // serializes the data
-        val serializedData = snapshotData.toJSON()
+        val askCommandMessage = AskCommandMessage(snapshotData)
+        val serializedData = askCommandMessage.toJSON()
+
         // sends the data to the client
-        output.write(serializedData)
+        output.println(serializedData+"\n")
+        output.flush()
 
-        // starts the countdown of the timer
-
-        TODO("Implement countdown")
-        
         val serializedResult = input.readLine()
 
         // parse the result
 
-        // returns the command
+        return MoveCommand(Vec3F(0f, 0f, 0f)) // TODO remove placeholder
     }
 
-    private fun gatherSnapshot(instance: Instance) : SnapshotData {
+    private fun gatherSnapshot(instance: Instance): SnapshotData {
 
         // Retrieves all the projectiles in the game
         val projectileSystem = instance.getSystem<ProjectileSystem>()
@@ -78,7 +104,7 @@ class PythonClient(
         scoreSystem.entities.forEach {
             val characterComponent =
                 instance.getComponentDynamicUnsafe(it, CharacterComponent::class)
-            if (characterComponent != null) {
+            if (characterComponent != null && it != entity) {
                 val characterComponentCasted = characterComponent as CharacterComponent
                 val transformComponent = instance.getComponent<TransformComponent>(it)
                 val dynamicComponent = instance.getComponent<DynamicComponent>(it)
@@ -89,6 +115,7 @@ class PythonClient(
                     dynamicComponent.speed,
                     stateComponent.state,
                     characterComponentCasted.health,
+                    scoreComponent.team,
                     scoreComponent.score
                 )
                 otherPlayers.add(playerData)
@@ -105,6 +132,7 @@ class PythonClient(
             controlledPlayerDynamicComponent.speed,
             controlledPlayerStateComponent.state,
             controlledPlayerCharacterComponent.health,
+            controlledPlayerScoreComponent.team,
             controlledPlayerScoreComponent.score
         )
         return SnapshotData(controllerPlayer, otherPlayers, projectiles)
