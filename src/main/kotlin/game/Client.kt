@@ -220,7 +220,8 @@ open class WindowlessClient(
     private val gameFile: String,
     private val gameTime: Float = 60f,
     private val aiTime: Float = 60f,
-    private val actionsPerSecond: Float = 4f
+    private val actionsPerSecond: Float = 4f,
+    private val port: Int = 2049
 ) {
 
     private val _instance = Instance()
@@ -260,9 +261,6 @@ open class WindowlessClient(
         _instance.registerComponent<ScoreComponent>()
         _instance.registerComponent<TimerComponent>()
         _instance.registerComponent<SpawnerComponent>()
-
-        println("Components initialized.")
-
 
         // initializes non-graphical systems
         _movementSystem.initialize()
@@ -313,7 +311,7 @@ open class WindowlessClient(
         spawnerSignature.set(_instance.getComponentType<SpawnerComponent>(), true)
         _instance.setSystemSignature<SpawnerSystem>(spawnerSignature)
 
-        _aiSystem.initialize(aiTime, gameFile)
+        _aiSystem.initialize(aiTime, gameFile, port)
         val aiSignature = Signature()
         aiSignature.set(_instance.getComponentType<CommandComponent>(), true)
         _instance.setSystemSignature<PythonAISystem>(aiSignature)
@@ -323,7 +321,7 @@ open class WindowlessClient(
         _collisionSystem.addObserver(_stateSystem)  // state change
         _projectileSystem.addObserver(_stateSystem)
 
-        println("Systems initialized.")
+        println("Components and Systems are initialized.")
     }
 
     fun create() {
@@ -351,7 +349,13 @@ open class WindowlessClient(
             _scoreSystem.update(_instance, deltaTime)
         }
         val gameResult = _scoreSystem.results(_instance)
-        (_aiSystem as PythonAISystem).finish(gameResult)
+        if (!(_aiSystem as PythonAISystem).aborted()) {
+            (_aiSystem as PythonAISystem).finish(gameResult)
+            println("Game finished, game results are: $gameResult")
+        }
+        else {
+            println("Game aborted, game results are: $gameResult")
+        }
     }
 
     private fun addAgent() {

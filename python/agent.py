@@ -9,9 +9,6 @@ from dataclasses import dataclass
 from abc import ABC, abstractmethod
 
 JAR_FILE = 'challenge.jar'
-COMMANDS_PER_SECOND = 4
-GAME_TIME = 60.0
-AI_TIME = 150.0
 
 BLUE_USERNAME = 'player_0'
 BLUE_TEAM = 0
@@ -20,9 +17,11 @@ RED_USERNAME = 'player_1'
 RED_TEAM = 1
 
 
-def challenge_thread_work():
+def challenge_thread_work(jvm_path: str, file: str = f'{str(datetime.datetime.now())}.hackathon',
+ game_time: float = 60.0, ai_time: float = 150.0, commands_per_second: int = 4, port: int = 2049):
 	current_datetime = datetime.datetime.now()
-	process_result = subprocess.run(['java', '-jar', '--illegal-access=warn', JAR_FILE, '-m', 'windowless', '-f', f'{str(current_datetime)}.hackathon', '-t', f'{GAME_TIME}', '-a', f'{AI_TIME}', '-c', f'{COMMANDS_PER_SECOND}'])
+	process_result = subprocess.run([jvm_path, '-jar', '--illegal-access=warn', JAR_FILE, '-m', 'windowless',
+	 '-f', file, '-t', str(game_time), '-a', str(ai_time), '-c', str(commands_per_second), '-p', str(port)])
 	print(f'Challenge process finished, returned code: {process_result.returncode}')
 
 
@@ -80,9 +79,33 @@ class ShootCommand(Command):
 		self.command_type = 'SHOOT'
 		self.shoot_angle = shoot_angle
 
+
+@dataclass
+class InvalidCommmand(Command):
+	'''
+	Invalid command as a crash test for the server
+	'''
+	whatever_value : str
+
+	def __init__(self, value):
+		self.command_type = 'INVALID'
+		self.whatever_value = value
+
+
+@dataclass
+class AgentResult:
+	username: str
+	team: int
+	score: float
+	won: bool
+	aborted: bool
+	error_message: str
+	blame: str
+
+
 class AIAgent:
 
-	def __init__(self, username : str, team: int, ai: typing.Callable[[], str], address: str = '127.0.0.1', port: int = 2049):
+	def __init__(self, username : str, team: int, ai: typing.Callable[[], str], data: typing.Dict = None, address: str = '127.0.0.1', port: int = 2049):
 		self.username = username
 		self.team = team
 		self.ai = ai
@@ -90,16 +113,17 @@ class AIAgent:
 		self._address = address
 		self._socket = None
 		self._thread = None
-		
-		self.score = None
-		
+
+		self._data = data
+
+		self.results = None
 		self.aborted = False
 		self.abort_message = None
 		self.abort_blame = None
 
-	def _connect(self, port: int = 2049, address: str = '127.0.0.1'):
+	def _connect(self):
 		self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		self._socket.connect((address, port))
+		self._socket.connect((self._address, self._port))
 		# Sends the username and the team
 		self._send_message(self.username)
 		self._send_message(str(self.team))
@@ -139,9 +163,6 @@ class AIAgent:
 							   float(projectile_data['speed']['z']))
 		return ProjectileData(projectile_position, projectile_speed)
 
-	def _parse_finishing_results(self, results: typing.Dict):
-		pass
-
 	def _send_command(self, snapshot: typing.Dict):
 		# Parses the message
 		controlled_player_data = snapshot['controlledPlayer']
@@ -160,13 +181,27 @@ class AIAgent:
 		snapshot = SnapshotData(controlled_player, other_players, projectiles)
 
 		# Asks for the command to the AI
-		command = self.ai(snapshot)
+		try:
+			command = self.ai(snapshot, self._data)
+		except Exception as exc:
+			# In case there is problem inside the function coded by the participants
+			print('Exception during the AI function, sending an invalid command to abort the game.')
+			command = InvalidCommmand(f'Exception during the ai function:\n{exc}')
 
 		# Sends the command to the server
 		serialized_command = json.dumps(command.__dict__)
-#		print(f'Sending command: {serialized_command}')
 
 		self._send_message(serialized_command)
+
+	def _parse_results(self, score_results: typing.Dict) -> AgentResult:
+		for result in score_results:
+			if int(result['team']) == self.team:
+				score = float(result['score'])
+				won = bool(result['won'])
+				return AgentResult(self.username, self.team, score, won, False, None, None)
+
+	def _parse_abortion(self, error: str, blame: str):
+		return AgentResult(self.username, self.team, 0.0, False, True, error, blame)
 
 	def start(self):
 		self._thread = threading.Thread(target=self._work)
@@ -185,28 +220,35 @@ class AIAgent:
 				# TODO remove
 				self._send_command(message['snapshot'])
 			elif message['header'] == 'GAME_FINISHED':
+				self.results = self._parse_results(message['score'])
 				should_stop = True
 			elif message['header'] == 'ABORT':
+				self.results = self._parse_abortion(message['error'], message['blame'])
 				should_stop = True
-			# TODO: Parse message
-			# TODO: act accordingly
-			# TODO: stop the worker if there is a problem
-
 
 def my_ai(gamestate: SnapshotData):
+	print('Sending shoot command')
 	return ShootCommand(270.0)
-#	return MoveCommand((0.0, -1.0, 0.0))
+
+
+def my_ai_failed(gamestate: SnapshotData):
+	print('Sending invalid command')
+	return InvalidCommmand('Hello, this is a failed command.')
+
+def my_ai_exception(gamestate: SnapshotData):
+	raise Exception('I fucked up in my_ai script')
+
 
 if __name__ == '__main__':
 	print('Starting the challenge server.')
 	challenge_thread = threading.Thread(target=challenge_thread_work)
 	challenge_thread.start()
 
-	print('Waiting 2 seconds for the server to launch.')
-	time.sleep(2)
+	print('Waiting a second for the server to launch.')
+	time.sleep(1)
 
 	blue_agent = AIAgent(BLUE_USERNAME, BLUE_TEAM, my_ai)
-	red_agent = AIAgent(RED_USERNAME, RED_TEAM, my_ai)
+	red_agent = AIAgent(RED_USERNAME, RED_TEAM, my_ai_exception)
 
 	print('Starting the agents')
 	blue_agent.start()

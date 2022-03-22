@@ -81,11 +81,9 @@ class ScoreSystem : System() {
         _gameTime -= delta
         if (_gameTime <= 0f) {
             if (!_endOfGame) {
-                println("End of the game") // TODO: Compute score and give winner
                 _playerEntities.forEach {
                     val scoreComponent = instance.getComponent<ScoreComponent>(it)
                     scoreComponent.gameOn = false
-                    println("Player ${scoreComponent.username} - Score: ${scoreComponent.score}")
                 }
             }
             _endOfGame = true
@@ -108,12 +106,14 @@ class ScoreSystem : System() {
 
     fun forceFinishGame(instance: Instance, loser: Entity) {
         entities.forEach {
-            val scoreComponent = instance.getComponent<ScoreComponent>(it)
-            if (it != loser) {
-                scoreComponent.score = 1.0f
-            }
-            else {
-                scoreComponent.score = 0.0f
+            val scoreComponent = instance.getComponentDynamicUnsafe(it, ScoreComponent::class)
+            if (scoreComponent is ScoreComponent) {
+                if (it != loser) {
+                    scoreComponent.score = 1.0f
+                }
+                else {
+                    scoreComponent.score = 0.0f
+                }
             }
         }
         _endOfGame = true

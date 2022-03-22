@@ -171,6 +171,7 @@ class PythonClient(
         val serializedMessage = abortMessage.toJSON()
         val output = PrintWriter(client.getOutputStream(), true)
         output.println(serializedMessage + "\n")
+        Thread.sleep(500)
         client.close()
     }
 
@@ -179,6 +180,7 @@ class PythonClient(
         val serializedMessage = gameFinishedMessage.toJSON()
         val output = PrintWriter(client.getOutputStream(), true)
         output.println(serializedMessage + "\n")
+        Thread.sleep(500)
         client.close()
     }
 }
@@ -187,9 +189,9 @@ data class AgentData(val valid: Boolean, val username: String, val team: Int, va
 
 class PythonAISystem : System() {
 
-    private val _port = 2049
+    private var _port = 0
 
-    private val _serverSocket = ServerSocket(_port)
+    private var _serverSocket : ServerSocket? = null
 
     private val _clients = HashMap<String, PythonClient>()
 
@@ -199,10 +201,12 @@ class PythonAISystem : System() {
 
     private var _savePath: String? = null
 
+    private var _aborted : Boolean = false
+
     fun addAgent(instance: Instance): AgentData {
         try {
             println("Waiting for an agent to connect on port $_port.")
-            val client = _serverSocket.accept()
+            val client = _serverSocket!!.accept()
             println("Client accepted with address: ${client.inetAddress}")
             val inputStream = BufferedReader(InputStreamReader(client.getInputStream()))
 
@@ -227,12 +231,14 @@ class PythonAISystem : System() {
     }
 
     override fun initializeLogic(vararg arg: Any): Boolean {
-        if (arg.size < 2) {
+        if (arg.size < 3) {
             return false
         }
         return try {
             _aiTime = arg[0] as Float
             _savePath = arg[1] as String
+            _port = arg[2] as Int
+            _serverSocket = ServerSocket(_port)
             true
         } catch (exc: TypeCastException) {
             false
@@ -257,6 +263,7 @@ class PythonAISystem : System() {
                     "Exception occurred when parsing the action for user $username:\n${exc}",
                     "player: $username"
                 )
+                return
             }
         }
     }
@@ -271,11 +278,16 @@ class PythonAISystem : System() {
         _clients.forEach { (_, session) ->
             session.abort(message, blame)
         }
+        _aborted = true
     }
 
     fun finish(results: List<ScoreResult>) {
         _clients.forEach { (_, session) ->
             session.finished(results)
         }
+    }
+
+    fun aborted() : Boolean {
+        return _aborted
     }
 }

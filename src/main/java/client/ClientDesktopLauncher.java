@@ -14,6 +14,7 @@ public class ClientDesktopLauncher {
         options.addOption("t", "gametime", true, "Game time (in seconds) - Default: 60s");
         options.addOption("a", "aitime", true, "Time dedicated for each AI to compute. - Default: 150s");
         options.addOption("c", "cps", true, "Commands per seconds (asked to the python AI). - Default: 4 per second");
+        options.addOption("p", "port", true, "Used port by the server.");
 
         CommandLineParser parser = new DefaultParser();
         CommandLine cmd = parser.parse(options, arg);
@@ -23,10 +24,12 @@ public class ClientDesktopLauncher {
         String gameTime = cmd.getOptionValue("t");
         String aiTime = cmd.getOptionValue("a");
         String commandsPerSecond = cmd.getOptionValue("c");
+        String port = cmd.getOptionValue("p");
 
         float actualGameTime = 0f;
         float actualAITime = 0f;
         float actualCommandsPerSeconds = 0f;
+        int actualPort = 0;
 
         if (gameTime != null)
             actualGameTime = Float.parseFloat(gameTime);
@@ -42,6 +45,11 @@ public class ClientDesktopLauncher {
             actualCommandsPerSeconds = Float.parseFloat(commandsPerSecond);
         else
             actualCommandsPerSeconds = 4f;
+
+        if (port != null)
+            actualPort = Integer.parseInt(port);
+        else
+            actualPort = 2049;
 
         if (mode.equals("window")) {
             LwjglApplicationConfiguration applicationConfiguration = new LwjglApplicationConfiguration();
@@ -61,7 +69,7 @@ public class ClientDesktopLauncher {
             }
             if (commandsPerSecond == null)  {
             }
-            WindowlessClient client = new WindowlessClient(file, actualGameTime, actualAITime, actualCommandsPerSeconds);
+            WindowlessClient client = new WindowlessClient(file, actualGameTime, actualAITime, actualCommandsPerSeconds, actualPort);
             client.create();
             client.play();
         }
