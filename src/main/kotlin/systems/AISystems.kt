@@ -458,6 +458,7 @@ class ReplaySystem : System() {
     override fun updateLogic(instance: Instance, delta: Float) {
         _agentOutputSave!!.agents.forEach { agent ->
             val stateCommand = _commands.poll()
+            println("Remaining commands to play: ${_commands.size}")
             val commandComponent = instance.getComponent<CommandComponent>(agent.entity)
             if (commandComponent.controllerType == ControllerType.AI)
                 commandComponent.commands.add(stateCommand)

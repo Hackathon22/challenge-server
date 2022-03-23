@@ -128,15 +128,19 @@ open class WindowlessClient(
     }
 
     fun play() {
-        val deltaTime = 1.0f / actionsPerSecond
+        val deltaTime = 1.0f / 60.0f
+        var tickCounter = 0
+        val aiModulo = (60 / actionsPerSecond).toInt()
         while (!(_scoreSystem as ScoreSystem).gameOver()) {
-            _aiSystem.update(_instance, deltaTime)
+            if (tickCounter % aiModulo == 0)
+                _aiSystem.update(_instance, deltaTime)
             _timerSystem.update(_instance, deltaTime)
             _stateSystem.update(_instance, deltaTime)
             _movementSystem.update(_instance, deltaTime)
             _collisionSystem.update(_instance, deltaTime)
             _projectileSystem.update(_instance, deltaTime)
             _scoreSystem.update(_instance, deltaTime)
+            tickCounter+=1
         }
         val gameResult = _scoreSystem.results(_instance)
         (_aiSystem as PythonAISystem).saveToFile()

@@ -80,8 +80,8 @@ public class ClientDesktopLauncher {
             applicationConfiguration.title = "Hackathon22 - Replay";
             applicationConfiguration.width = 1200;
             applicationConfiguration.height = 800;
-            applicationConfiguration.foregroundFPS = 4;
-            applicationConfiguration.backgroundFPS = 4;
+            applicationConfiguration.foregroundFPS = 60;
+            applicationConfiguration.backgroundFPS = 60;
             applicationConfiguration.resizable = false;
 
             ReplayClient client = new ReplayClient(file);

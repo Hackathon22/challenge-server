@@ -47,6 +47,10 @@ open class ReplayClient(private val gameFile: String) :
 
     private var _agentData = ArrayList<AgentData>()
 
+    private var _tickCounter = 0
+
+    private var _aiModulo = (60 / _commandsPerSeconds).toInt()
+
     override val observers = ArrayList<IObserver>()
 
     init {
@@ -196,7 +200,8 @@ open class ReplayClient(private val gameFile: String) :
         val deltaTime = Gdx.graphics.deltaTime
 
         // get inputs
-        _replaySystem.update(_instance, deltaTime)
+        if (_tickCounter % _aiModulo == 0)
+            _replaySystem.update(_instance, deltaTime)
 
         // simulate timer
         _timerSystem.update(_instance, deltaTime)
@@ -217,5 +222,7 @@ open class ReplayClient(private val gameFile: String) :
         _cameraSystem.update(_instance, deltaTime)
         _spriteSystem.update(_instance, deltaTime)
         _uiSystem.update(_instance, deltaTime)
+
+        _tickCounter += 1
     }
 }
