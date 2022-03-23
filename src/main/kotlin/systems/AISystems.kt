@@ -1,13 +1,19 @@
 package systems
 
-import com.google.gson.Gson
+import com.google.gson.*
 import com.google.gson.annotations.SerializedName
 import components.*
 import core.*
 import java.io.*
 import java.lang.Exception
+import java.lang.reflect.Type
 import java.net.ServerSocket
 import java.net.Socket
+import java.util.*
+import javax.swing.plaf.nimbus.State
+import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
+import kotlin.collections.LinkedHashSet
 
 
 // JSON serialization solution from
@@ -191,14 +197,72 @@ class PythonClient(
 }
 
 // Agent data is returned by the python AI system upon the connection of a new agent
-data class AgentData(val valid: Boolean, val username: String, val team: Int, val entity: Entity)
+data class AgentData(
+    @SerializedName("valid") val valid: Boolean,
+    @SerializedName("username") val username: String,
+    @SerializedName("team") val team: Int,
+    @SerializedName("entity") val entity: Entity
+) : JSONConvertable
 
-data class AgentOutputCommand(@SerializedName("time") val time: Float,
-                              @SerializedName("entity") val entity: Entity,
-                              @SerializedName("command") val command : StateCommand) : JSONConvertable
+data class AgentOutputCommand(
+    @SerializedName("time") val time: Float,
+    @SerializedName("entity") val entity: Entity,
+    @SerializedName("command") val command: StateCommand
+) : JSONConvertable
+
+class AgentOutputSaveDeserializer : JsonDeserializer<AgentsOutputSave> {
+    override fun deserialize(
+        json: JsonElement,
+        typeOfT: Type,
+        context: JsonDeserializationContext
+    ): AgentsOutputSave {
+        val outputSave = AgentsOutputSave()
+        val document = json.asJsonObject
+
+        outputSave.commandsPerSecond = document.get("commandsPerSecond").asFloat
+        outputSave.gameTime = document.get("gameTime").asFloat
+        outputSave.aiTime = document.get("aiTime").asFloat
+
+        val documentAgents = document.get("agents").asJsonArray
+        documentAgents.forEach { elem ->
+            outputSave.addAgent(elem.asJsonObject.toString().toObject())
+        }
+
+        val documentCommands = document.get("commands").asJsonArray
+        documentCommands.forEach { element ->
+            val jsonCommand = element.asJsonObject
+            val jsonStateCommand = jsonCommand.get("command").asJsonObject
+            when (jsonStateCommand.get("commandType").asString) {
+                "moveCommand" -> outputSave.addCommand(
+                    jsonStateCommand.asJsonObject.toString().toObject<MoveCommand>(),
+                    jsonCommand.get("time").asFloat,
+                    jsonCommand.get("entity").asInt
+                )
+                "shootCommand" -> outputSave.addCommand(
+                    jsonStateCommand.asJsonObject.toString().toObject<ShootCommand>(),
+                    jsonCommand.get("time").asFloat,
+                    jsonCommand.get("entity").asInt
+                )
+                else -> throw JsonParseException("Unknown state command type: ${jsonCommand.get("commandType").asString}")
+            }
+        }
+
+        return outputSave
+    }
+
+}
 
 // This is a saved file of the commands pushed by the players
 class AgentsOutputSave : JSONConvertable {
+    @SerializedName("commandsPerSecond")
+    var commandsPerSecond = 4.0f
+
+    @SerializedName("gameTime")
+    var gameTime = 60.0f
+
+    @SerializedName("aiTime")
+    var aiTime = 150.0f
+
     @SerializedName("agents")
     val agents = ArrayList<AgentData>()
 
@@ -218,21 +282,24 @@ class AgentsOutputSave : JSONConvertable {
         val output = PrintWriter(file)
 
         val serializedSave = this.toJSON()
-        output.write(serializedSave+"\n")
+        output.write(serializedSave + "\n")
         output.flush()
         output.close()
     }
 
     // Static method to load from a file
     companion object {
-        fun loadFromFile(filePath: String) : AgentsOutputSave {
+        fun loadFromFile(filePath: String): AgentsOutputSave {
             val file = FileInputStream(filePath)
             val input = BufferedReader(InputStreamReader(file))
 
             val serializedSave = input.readText()
-            input.close()
 
-            return serializedSave.toObject<AgentsOutputSave>()
+            val builder = GsonBuilder()
+            builder.registerTypeAdapter(AgentsOutputSave::class.java, AgentOutputSaveDeserializer())
+            val gson = builder.create()
+
+            return gson.fromJson(serializedSave, AgentsOutputSave::class.java)
         }
     }
 
@@ -242,7 +309,7 @@ class PythonAISystem : System() {
 
     private var _port = 0
 
-    private var _serverSocket : ServerSocket? = null
+    private var _serverSocket: ServerSocket? = null
 
     private val _clients = HashMap<String, PythonClient>()
 
@@ -252,9 +319,13 @@ class PythonAISystem : System() {
 
     private var _aiTime: Float? = null
 
+    private var _gameTime: Float? = null
+
+    private var _commandsPerSecond: Float? = null
+
     private var _savePath: String? = null
 
-    private var _aborted : Boolean = false
+    private var _aborted: Boolean = false
 
     // used to save the timestamps of the commands
     private var _timeCounter = 0f
@@ -289,15 +360,21 @@ class PythonAISystem : System() {
     }
 
     override fun initializeLogic(vararg arg: Any): Boolean {
-        if (arg.size < 3) {
+        if (arg.size < 4) {
             return false
         }
         return try {
             _aiTime = arg[0] as Float
-            _savePath = arg[1] as String
-            _port = arg[2] as Int
+            _gameTime = arg[1] as Float
+            _commandsPerSecond = arg[2] as Float
+            _savePath = arg[3] as String
+            _port = arg[4] as Int
 
             _serverSocket = ServerSocket(_port)
+
+            _commandSave.commandsPerSecond = _commandsPerSecond!!
+            _commandSave.aiTime = _aiTime!!
+            _commandSave.gameTime = _gameTime!!
             true
         } catch (exc: TypeCastException) {
             false
@@ -349,11 +426,55 @@ class PythonAISystem : System() {
         }
     }
 
-    fun aborted() : Boolean {
+    fun aborted(): Boolean {
         return _aborted
     }
 
     fun saveToFile() {
         _commandSave.saveToFile(_savePath!!)
     }
+}
+
+class ReplaySystem : System() {
+
+    private var _agentOutputSave: AgentsOutputSave? = null
+
+    private var _commands: Queue<StateCommand> = LinkedList()
+
+    override fun initializeLogic(vararg arg: Any): Boolean {
+        assert(arg.isNotEmpty())
+        return try {
+            val filePath = arg[0] as String
+            _agentOutputSave = AgentsOutputSave.loadFromFile(filePath)
+            _agentOutputSave!!.commands.forEach {
+                _commands.add(it.command)
+            }
+            true
+        } catch (exc: TypeCastException) {
+            false
+        }
+    }
+
+    override fun updateLogic(instance: Instance, delta: Float) {
+        _agentOutputSave!!.agents.forEach { agent ->
+            val stateCommand = _commands.poll()
+            val commandComponent = instance.getComponent<CommandComponent>(agent.entity)
+            if (commandComponent.controllerType == ControllerType.AI)
+                commandComponent.commands.add(stateCommand)
+        }
+    }
+
+    override fun onEntityAdded(entity: Entity) {
+    }
+
+    override fun onEntityRemoved(entity: Entity) {
+    }
+
+    fun gameTime(): Float = _agentOutputSave!!.gameTime
+
+    fun aiTime(): Float = _agentOutputSave!!.aiTime
+
+    fun commandsPerSeconds(): Float = _agentOutputSave!!.commandsPerSecond
+
+    fun agents(): List<AgentData> = _agentOutputSave!!.agents
 }

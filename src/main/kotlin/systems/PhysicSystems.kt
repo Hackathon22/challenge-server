@@ -172,7 +172,7 @@ class CollisionSystem : System() {
         }
 
         // detects collisions, rolling back the current positions
-        _world.step(delta, 1, 1)
+        _world.step(delta, 12, 12)
 
         // rolling back position to last non-colliding position
         _callbackPositions.forEach { (entity, pos) ->

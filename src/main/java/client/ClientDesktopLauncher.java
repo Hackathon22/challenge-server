@@ -3,6 +3,7 @@ package client;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplication;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration;
 import game.DesktopClient;
+import game.ReplayClient;
 import game.WindowlessClient;
 import org.apache.commons.cli.*;
 
@@ -53,7 +54,7 @@ public class ClientDesktopLauncher {
 
         if (mode.equals("window")) {
             LwjglApplicationConfiguration applicationConfiguration = new LwjglApplicationConfiguration();
-            applicationConfiguration.title = "ARSWA";
+            applicationConfiguration.title = "Hackathon22";
             applicationConfiguration.width = 1200;
             applicationConfiguration.height = 800;
             applicationConfiguration.foregroundFPS = 60;
@@ -67,14 +68,24 @@ public class ClientDesktopLauncher {
             if (file == null) {
                 throw new IllegalArgumentException("Please specify the save file path when running on windowless mode.");
             }
-            if (commandsPerSecond == null)  {
-            }
             WindowlessClient client = new WindowlessClient(file, actualGameTime, actualAITime, actualCommandsPerSeconds, actualPort);
             client.create();
             client.play();
         }
         else if (mode.equals("replay")) {
-            // TODO implement
+            if (file == null) {
+                throw new IllegalArgumentException("Please specify the save file path when running on replay mode.");
+            }
+            LwjglApplicationConfiguration applicationConfiguration = new LwjglApplicationConfiguration();
+            applicationConfiguration.title = "Hackathon22 - Replay";
+            applicationConfiguration.width = 1200;
+            applicationConfiguration.height = 800;
+            applicationConfiguration.foregroundFPS = 4;
+            applicationConfiguration.backgroundFPS = 4;
+            applicationConfiguration.resizable = false;
+
+            ReplayClient client = new ReplayClient(file);
+            new LwjglApplication(client, applicationConfiguration);
         }
         else {
             throw new IllegalArgumentException("Unknown challenge mode: " + mode);

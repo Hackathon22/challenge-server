@@ -2,6 +2,7 @@ package components
 
 import com.google.gson.annotations.SerializedName
 import core.IComponent
+import core.NoArg
 import core.Vec3F
 import systems.JSONConvertable
 import java.util.*

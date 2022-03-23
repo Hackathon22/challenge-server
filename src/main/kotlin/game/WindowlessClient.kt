@@ -1,33 +1,22 @@
 package game
 
-import com.badlogic.gdx.ApplicationAdapter
-import com.badlogic.gdx.Gdx
 import components.*
-import core.*
-import render.SpriteRegister
+import core.Instance
+import core.Signature
+import core.System
 import systems.*
-import java.util.concurrent.atomic.AtomicBoolean
 
-const val BASE_WIDTH = 1200
-const val BASE_HEIGHT = 800
-
-
-var WINDOW_MODE = true
-
-open class DesktopClient(private val gameFile: String? = null, private val gameTime: Float = 60f) :
-    ApplicationAdapter(), IObservable {
-
-    private val _running = AtomicBoolean(false)
+open class WindowlessClient(
+    private val gameFile: String,
+    private val gameTime: Float = 60f,
+    private val aiTime: Float = 60f,
+    private val actionsPerSecond: Float = 4f,
+    private val port: Int = 2049
+) {
 
     private val _instance = Instance()
 
     private val _movementSystem: System = _instance.registerSystem<MovementSystem>()
-
-    private val _cameraSystem: System = _instance.registerSystem<CameraSystem>()
-
-    private val _spriteSystem: System = _instance.registerSystem<SpriteRenderSystem>()
-
-    private val _inputSystem: System = _instance.registerSystem<InputSystem>()
 
     private val _stateSystem: System = _instance.registerSystem<StateSystem>()
 
@@ -39,21 +28,19 @@ open class DesktopClient(private val gameFile: String? = null, private val gameT
 
     private val _scoreSystem: System = _instance.registerSystem<ScoreSystem>()
 
-    private val _uiSystem: System = _instance.registerSystem<UISystem>()
-
     private val _timerSystem: System = _instance.registerSystem<TimerSystem>()
 
     private val _spawnerSystem: System = _instance.registerSystem<SpawnerSystem>()
 
-    override val observers = ArrayList<IObserver>()
+    private val _aiSystem: System = _instance.registerSystem<PythonAISystem>()
 
     init {
+        // toggles-off the windowed flag
+        WINDOW_MODE = false
+
         // registers components
-        _instance.registerComponent<NetworkComponent>()
         _instance.registerComponent<TransformComponent>()
         _instance.registerComponent<DynamicComponent>()
-        _instance.registerComponent<CameraComponent>()
-        _instance.registerComponent<SpriteComponent>()
         _instance.registerComponent<CommandComponent>()
         _instance.registerComponent<StateComponent>()
         _instance.registerComponent<CharacterComponent>()
@@ -100,6 +87,7 @@ open class DesktopClient(private val gameFile: String? = null, private val gameT
 
         _scoreSystem.initialize(gameTime)
         val scoreSignature = Signature() // accepts all kind of entities
+
         _instance.setSystemSignature<ScoreSystem>(scoreSignature)
 
         _timerSystem.initialize()
@@ -113,45 +101,21 @@ open class DesktopClient(private val gameFile: String? = null, private val gameT
         spawnerSignature.set(_instance.getComponentType<SpawnerComponent>(), true)
         _instance.setSystemSignature<SpawnerSystem>(spawnerSignature)
 
+        _aiSystem.initialize(aiTime, gameTime, actionsPerSecond, gameFile, port)
+        val aiSignature = Signature()
+        aiSignature.set(_instance.getComponentType<CommandComponent>(), true)
+        _instance.setSystemSignature<PythonAISystem>(aiSignature)
+
         // sets observers on non-graphical systems
         _collisionSystem.addObserver(_projectileSystem)  // bullet collision
         _collisionSystem.addObserver(_stateSystem)  // state change
         _projectileSystem.addObserver(_stateSystem)
+
+        println("Components and Systems are initialized.")
     }
 
-    override fun create() {
-        // Loads all the game sprites
-        SpriteRegister.initialize()
-
-        // initializes input systems
-        _inputSystem.initialize()
-        val inputSignature = Signature()
-        inputSignature.set(_instance.getComponentType<CommandComponent>(), true)
-        _instance.setSystemSignature<InputSystem>(inputSignature)
-
-        // initializes graphical systems
-        _cameraSystem.initialize(BASE_WIDTH, BASE_HEIGHT)
-        val cameraSignature = Signature()
-        cameraSignature.set(_instance.getComponentType<CameraComponent>(), true)
-        cameraSignature.set(_instance.getComponentType<TransformComponent>(), true)
-        _instance.setSystemSignature<CameraSystem>(cameraSignature)
-
-        _spriteSystem.initialize()
-        val spriteSignature = Signature()
-        spriteSignature.set(_instance.getComponentType<TransformComponent>(), true)
-        spriteSignature.set(_instance.getComponentType<SpriteComponent>(), true)
-        _instance.setSystemSignature<SpriteRenderSystem>(spriteSignature)
-
-        _uiSystem.initialize()
-        val uiSignature = Signature()
-        uiSignature.set(_instance.getComponentType<ScoreComponent>(), true)
-        _instance.setSystemSignature<UISystem>(uiSignature)
-
-        // set observers on graphical systems
-        this.addObserver(_cameraSystem)
-
-        // loads the scene
-        val scene = SceneRegistry.loadScene("baseScene")
+    fun create() {
+        val scene = SceneRegistry.loadScene("baseSceneWindowless")
         scene.forEach { (_, components) ->
             val entity = _instance.createEntity()
             components.forEach {
@@ -159,58 +123,46 @@ open class DesktopClient(private val gameFile: String? = null, private val gameT
             }
         }
 
-        // loads two players
-        val player0Entity = _instance.createEntity()
-        (_spawnerSystem as SpawnerSystem).spawn(
-            _instance,
-            player0Entity,
-            "player_1",
-            0,
-            ControllerType.LOCAL_INPUT
-        )
-        val player1Entity = _instance.createEntity()
-        (_spawnerSystem as SpawnerSystem).spawn(
-            _instance,
-            player1Entity,
-            "player_2",
-            1,
-            ControllerType.AI
-        )
-
-        _running.set(true)
+        // waits for the two python agents to connect
+        for (i in 0..1) addAgent()
     }
 
-    override fun dispose() {
-        _running.set(false)
+    fun play() {
+        val deltaTime = 1.0f / actionsPerSecond
+        while (!(_scoreSystem as ScoreSystem).gameOver()) {
+            _aiSystem.update(_instance, deltaTime)
+            _timerSystem.update(_instance, deltaTime)
+            _stateSystem.update(_instance, deltaTime)
+            _movementSystem.update(_instance, deltaTime)
+            _collisionSystem.update(_instance, deltaTime)
+            _projectileSystem.update(_instance, deltaTime)
+            _scoreSystem.update(_instance, deltaTime)
+        }
+        val gameResult = _scoreSystem.results(_instance)
+        (_aiSystem as PythonAISystem).saveToFile()
+        if (!_aiSystem.aborted()) {
+            (_aiSystem).finish(gameResult)
+            println("Game finished, game results are: $gameResult")
+        }
+        else {
+            println("Game aborted, game results are: $gameResult")
+        }
     }
 
-    override fun resize(width: Int, height: Int) {
-        notifyObservers(WindowResizeEvent(Vec2F(width.toFloat(), height.toFloat())), _instance)
+    private fun addAgent() {
+        val agentData = (_aiSystem as PythonAISystem).addAgent(_instance)
+        if (agentData.valid) {
+            (_spawnerSystem as SpawnerSystem).spawn(
+                _instance,
+                agentData.entity,
+                agentData.username,
+                agentData.team,
+                ControllerType.AI,
+                true
+            )
+        } else {
+            throw Exception("Error establishing a python agent.")
+        }
     }
 
-    override fun render() {
-        val deltaTime = Gdx.graphics.deltaTime
-        // get inputs
-        _inputSystem.update(_instance, deltaTime)
-
-        // simulate timer
-        _timerSystem.update(_instance, deltaTime)
-
-        // simulate player state
-        _stateSystem.update(_instance, deltaTime)
-
-        // physic systems
-        _movementSystem.update(_instance, deltaTime)
-        _collisionSystem.update(_instance, deltaTime)
-
-        _projectileSystem.update(_instance, deltaTime)
-
-        // rule systems
-        _scoreSystem.update(_instance, deltaTime)
-
-        // render systems
-        _cameraSystem.update(_instance, deltaTime)
-        _spriteSystem.update(_instance, deltaTime)
-        _uiSystem.update(_instance, deltaTime)
-    }
 }

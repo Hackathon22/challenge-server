@@ -8,7 +8,7 @@ def my_ai(gamestate: SnapshotData, my_data: typing.Dict) -> Command:
 	else:
 		my_data['counter'] += 1
 
-	return MoveCommand((0.0, 0.0, 0.0))
+	return MoveCommand((1.0, 1.0, 0.0))
 
 if __name__ == '__main__':
 	simulation_list = []

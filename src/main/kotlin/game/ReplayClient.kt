@@ -8,13 +8,7 @@ import render.SpriteRegister
 import systems.*
 import java.util.concurrent.atomic.AtomicBoolean
 
-const val BASE_WIDTH = 1200
-const val BASE_HEIGHT = 800
-
-
-var WINDOW_MODE = true
-
-open class DesktopClient(private val gameFile: String? = null, private val gameTime: Float = 60f) :
+open class ReplayClient(private val gameFile: String) :
     ApplicationAdapter(), IObservable {
 
     private val _running = AtomicBoolean(false)
@@ -26,8 +20,6 @@ open class DesktopClient(private val gameFile: String? = null, private val gameT
     private val _cameraSystem: System = _instance.registerSystem<CameraSystem>()
 
     private val _spriteSystem: System = _instance.registerSystem<SpriteRenderSystem>()
-
-    private val _inputSystem: System = _instance.registerSystem<InputSystem>()
 
     private val _stateSystem: System = _instance.registerSystem<StateSystem>()
 
@@ -44,6 +36,16 @@ open class DesktopClient(private val gameFile: String? = null, private val gameT
     private val _timerSystem: System = _instance.registerSystem<TimerSystem>()
 
     private val _spawnerSystem: System = _instance.registerSystem<SpawnerSystem>()
+
+    private val _replaySystem: System = _instance.registerSystem<ReplaySystem>()
+
+    private var _gameTime = 60f
+
+    private var _aiTime = 150f
+
+    private var _commandsPerSeconds = 4f
+
+    private var _agentData = ArrayList<AgentData>()
 
     override val observers = ArrayList<IObserver>()
 
@@ -66,6 +68,19 @@ open class DesktopClient(private val gameFile: String? = null, private val gameT
         _instance.registerComponent<SpawnerComponent>()
 
         // initializes non-graphical systems
+
+        _replaySystem.initialize(gameFile)
+        val replaySignature = Signature()
+        _instance.setSystemSignature<ReplaySystem>(replaySignature)
+
+        _gameTime = (_replaySystem as ReplaySystem).gameTime()
+        _aiTime = _replaySystem.aiTime()
+        _commandsPerSeconds = _replaySystem.commandsPerSeconds()
+
+        _replaySystem.agents().forEach {
+            _agentData.add(it)
+        }
+
         _movementSystem.initialize()
         val movementSignature = Signature()
         movementSignature.set(_instance.getComponentType<TransformComponent>(), true)
@@ -98,7 +113,7 @@ open class DesktopClient(private val gameFile: String? = null, private val gameT
         projectileSignature.set(_instance.getComponentType<DynamicComponent>(), true)
         _instance.setSystemSignature<ProjectileSystem>(projectileSignature)
 
-        _scoreSystem.initialize(gameTime)
+        _scoreSystem.initialize(_gameTime)
         val scoreSignature = Signature() // accepts all kind of entities
         _instance.setSystemSignature<ScoreSystem>(scoreSignature)
 
@@ -122,12 +137,6 @@ open class DesktopClient(private val gameFile: String? = null, private val gameT
     override fun create() {
         // Loads all the game sprites
         SpriteRegister.initialize()
-
-        // initializes input systems
-        _inputSystem.initialize()
-        val inputSignature = Signature()
-        inputSignature.set(_instance.getComponentType<CommandComponent>(), true)
-        _instance.setSystemSignature<InputSystem>(inputSignature)
 
         // initializes graphical systems
         _cameraSystem.initialize(BASE_WIDTH, BASE_HEIGHT)
@@ -159,23 +168,18 @@ open class DesktopClient(private val gameFile: String? = null, private val gameT
             }
         }
 
-        // loads two players
-        val player0Entity = _instance.createEntity()
-        (_spawnerSystem as SpawnerSystem).spawn(
-            _instance,
-            player0Entity,
-            "player_1",
-            0,
-            ControllerType.LOCAL_INPUT
-        )
-        val player1Entity = _instance.createEntity()
-        (_spawnerSystem as SpawnerSystem).spawn(
-            _instance,
-            player1Entity,
-            "player_2",
-            1,
-            ControllerType.AI
-        )
+        // loads new agents
+        _agentData.forEach { agent ->
+            val entity = _instance.createEntity()
+            assert(entity == agent.entity) // gros schlague
+            (_spawnerSystem as SpawnerSystem).spawn(
+                _instance,
+                entity,
+                agent.username,
+                agent.team,
+                ControllerType.AI
+            )
+        }
 
         _running.set(true)
     }
@@ -190,8 +194,9 @@ open class DesktopClient(private val gameFile: String? = null, private val gameT
 
     override fun render() {
         val deltaTime = Gdx.graphics.deltaTime
+
         // get inputs
-        _inputSystem.update(_instance, deltaTime)
+        _replaySystem.update(_instance, deltaTime)
 
         // simulate timer
         _timerSystem.update(_instance, deltaTime)
