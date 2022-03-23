@@ -16,8 +16,11 @@ interface JSONConvertable {
     fun toJSON(): String = Gson().toJson(this)
 }
 
+// adding a fromJSON function to string objects
 inline fun <reified T : JSONConvertable> String.toObject(): T = Gson().fromJson(this, T::class.java)
 
+
+// Snapshot data classes to send to the python AI agent
 data class PlayerData(
     @SerializedName("pos") val pos: Vec3F,
     @SerializedName("speed") val speed: Vec3F,
@@ -38,6 +41,7 @@ data class SnapshotData(
     @SerializedName("projectiles") val projectiles: List<ProjectileData>
 ) : JSONConvertable
 
+// Command data classes received from the python AI agent
 @NoArg
 open class AICommand(@SerializedName("command_type") val commandType: String) : JSONConvertable
 
@@ -47,6 +51,7 @@ data class AIMoveCommand(@SerializedName("move_direction") val moveDirection: Li
 data class AIShootCommand(@SerializedName("shoot_angle") val shootDirection: Float) :
     AICommand("SHOOT"), JSONConvertable
 
+// Messages sent to the python AI to ask for a new command or notice the end of the game.
 enum class MessageHeaders : JSONConvertable {
     ASK_COMMAND,
     GAME_FINISHED,
@@ -185,7 +190,53 @@ class PythonClient(
     }
 }
 
+// Agent data is returned by the python AI system upon the connection of a new agent
 data class AgentData(val valid: Boolean, val username: String, val team: Int, val entity: Entity)
+
+data class AgentOutputCommand(@SerializedName("time") val time: Float,
+                              @SerializedName("entity") val entity: Entity,
+                              @SerializedName("command") val command : StateCommand) : JSONConvertable
+
+// This is a saved file of the commands pushed by the players
+class AgentsOutputSave : JSONConvertable {
+    @SerializedName("agents")
+    val agents = ArrayList<AgentData>()
+
+    @SerializedName("commands")
+    val commands = ArrayList<AgentOutputCommand>()
+
+    fun addAgent(agentData: AgentData) {
+        agents.add(agentData)
+    }
+
+    fun addCommand(command: StateCommand, time: Float, agentEntity: Entity) {
+        commands.add(AgentOutputCommand(time, agentEntity, command))
+    }
+
+    fun saveToFile(filePath: String) {
+        val file = FileOutputStream(filePath)
+        val output = PrintWriter(file)
+
+        val serializedSave = this.toJSON()
+        output.write(serializedSave+"\n")
+        output.flush()
+        output.close()
+    }
+
+    // Static method to load from a file
+    companion object {
+        fun loadFromFile(filePath: String) : AgentsOutputSave {
+            val file = FileInputStream(filePath)
+            val input = BufferedReader(InputStreamReader(file))
+
+            val serializedSave = input.readText()
+            input.close()
+
+            return serializedSave.toObject<AgentsOutputSave>()
+        }
+    }
+
+}
 
 class PythonAISystem : System() {
 
@@ -197,11 +248,16 @@ class PythonAISystem : System() {
 
     private val _usernameToEntity = HashMap<String, Entity>()
 
+    private val _commandSave = AgentsOutputSave()
+
     private var _aiTime: Float? = null
 
     private var _savePath: String? = null
 
     private var _aborted : Boolean = false
+
+    // used to save the timestamps of the commands
+    private var _timeCounter = 0f
 
     fun addAgent(instance: Instance): AgentData {
         try {
@@ -221,7 +277,9 @@ class PythonAISystem : System() {
                     "Agent connected with username: $username and team: $team." +
                             " Assigned to player entity: $entity"
                 )
-                return AgentData(true, username, team, entity)
+                val agentData = AgentData(true, username, team, entity)
+                _commandSave.addAgent(agentData)
+                return agentData
             }
             return AgentData(false, "", 0, 0)
         } catch (exc: IOException) {
@@ -238,6 +296,7 @@ class PythonAISystem : System() {
             _aiTime = arg[0] as Float
             _savePath = arg[1] as String
             _port = arg[2] as Int
+
             _serverSocket = ServerSocket(_port)
             true
         } catch (exc: TypeCastException) {
@@ -250,6 +309,7 @@ class PythonAISystem : System() {
         _clients.forEach { (username, client) ->
             try {
                 val command = client.pollActions(instance)
+                _commandSave.addCommand(command, _timeCounter, client.entity)
                 val entity = _usernameToEntity[username]!!
                 val commandComponent = instance.getComponent<CommandComponent>(entity)
                 if (commandComponent.controllerType == ControllerType.AI) {
@@ -263,9 +323,11 @@ class PythonAISystem : System() {
                     "Exception occurred when parsing the action for user $username:\n${exc}",
                     "player: $username"
                 )
-                return
+                return@forEach
             }
         }
+        // updates the time counter
+        _timeCounter += delta
     }
 
     override fun onEntityAdded(entity: Entity) {
@@ -289,5 +351,9 @@ class PythonAISystem : System() {
 
     fun aborted() : Boolean {
         return _aborted
+    }
+
+    fun saveToFile() {
+        _commandSave.saveToFile(_savePath!!)
     }
 }

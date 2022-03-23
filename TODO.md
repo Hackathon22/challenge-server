@@ -2,7 +2,7 @@ TODO Hackathon:
 
 1) Implement a timer for the agents inside the Java server
 
-2) Debug the Java server
+2) ~~Debug the Java server~~ (OK for now)
 
 3) Save the output files in the Java server
 

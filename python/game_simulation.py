@@ -8,7 +8,7 @@ import time
 class GameSimulation:
 
 	def __init__(self, jvm_path: str, game_time: float = 60.0, ai_time: float = 150.0,
-	  commands_per_second: int = 4, save_file: str = f'{str(datetime.datetime.now())}.hackathon', port: int = 2049):
+	  commands_per_second: int = 4, save_file: str = None, port: int = 2049):
 		self._first_agent_username = None
 		self._second_agent_username = None
 
@@ -26,6 +26,10 @@ class GameSimulation:
 		self.save_file = save_file
 		self._jvm_path = jvm_path
 		self._port = port
+
+		if save_file is None:
+			date_time = datetime.datetime.now()
+			self.save_file = date_time.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3] + '.hackathon'
 
 	def set_first_agent(self, username: str, ai: typing.Callable[[SnapshotData, typing.Dict], Command], data: typing.Dict):
 		self._first_agent_username = username

@@ -1,7 +1,9 @@
 package components
 
+import com.google.gson.annotations.SerializedName
 import core.IComponent
 import core.Vec3F
+import systems.JSONConvertable
 import java.util.*
 
 /**
@@ -23,25 +25,21 @@ abstract class Command
 /**
  * Movement related commands, such as jumping; going left, right, stop etc...
  */
-abstract class StateCommand : Command()
-
-/**
- * Called when moving is required
- */
-class JumpCommand : StateCommand()
+abstract class StateCommand(@SerializedName("commandType") val commandType: String)
+    : Command(), JSONConvertable
 
 /**
  * Called when asking to move left or right
  */
-class MoveCommand(val direction : Vec3F, val release: Boolean = false) : StateCommand()
+class MoveCommand(@SerializedName("direction") val direction : Vec3F,
+                  @SerializedName("release") val release: Boolean = false) : StateCommand("moveCommand")
 
 class CursorMovedCommand(val worldPosition: Vec3F) : Command()
 
 /**
  * Called when asking to shoot
  */
-class ShootCommand(val angle: Float? = null) : StateCommand() {
-}
+class ShootCommand(@SerializedName("angle") val angle: Float? = null) : StateCommand("shootCommand")
 
 
 data class CommandComponent(var controllerType: ControllerType = ControllerType.LOCAL_INPUT,

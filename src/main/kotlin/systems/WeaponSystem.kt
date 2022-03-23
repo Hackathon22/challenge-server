@@ -117,7 +117,6 @@ class ProjectileSystem : System() {
                 instance.getComponentDynamicUnsafe(it.first, ProjectileComponent::class) ?: return
 
             explode(it.first, instance)
-            print("In bullet collision, added to remove: ${it.first}")
             toRemoveEntities.add(it.first)
         }
 

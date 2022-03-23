@@ -349,8 +349,9 @@ open class WindowlessClient(
             _scoreSystem.update(_instance, deltaTime)
         }
         val gameResult = _scoreSystem.results(_instance)
-        if (!(_aiSystem as PythonAISystem).aborted()) {
-            (_aiSystem as PythonAISystem).finish(gameResult)
+        (_aiSystem as PythonAISystem).saveToFile()
+        if (!_aiSystem.aborted()) {
+            (_aiSystem).finish(gameResult)
             println("Game finished, game results are: $gameResult")
         }
         else {
