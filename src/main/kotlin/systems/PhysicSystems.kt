@@ -112,11 +112,9 @@ class CollisionSystem : System() {
             _entitiesToBodies.remove(it)
             _bodiesToEntities.remove(body)
             _entityCollided.remove(it)
-            println("Removing entity: $it")
         }
 
         _addedEntities.forEach {
-            println("Adding entity: $it")
             // adds the entity entry in the position registry
             val transformComponent = instance.getComponent<TransformComponent>(it)
             _entityPositions[it] = Vec3F(transformComponent.pos)
@@ -178,7 +176,6 @@ class CollisionSystem : System() {
 
         // rolling back position to last non-colliding position
         _callbackPositions.forEach { (entity, pos) ->
-            println("Callback on entity $entity")
             // saves the rolled back position to the physical model
             val transformComponent = instance.getComponent<TransformComponent>(entity)
             val difference = transformComponent.pos - pos
