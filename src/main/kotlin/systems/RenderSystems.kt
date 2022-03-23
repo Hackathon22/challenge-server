@@ -108,13 +108,11 @@ class SpriteRenderSystem : System() {
                 )
             } else {
                 val sprite = Sprite(texture)
-                val totalWidth = texture.width.toFloat() * transformComponent.scale.x
-                val totalHeight = texture.height.toFloat() * transformComponent.scale.y
-                sprite.setOrigin(totalWidth / 2f, totalHeight / 2f)
+                sprite.setOrigin(texture.width.toFloat() / 2f, texture.height.toFloat() / 2f)
                 sprite.rotate(transformComponent.rot.z)
                 sprite.setPosition(
-                    transformComponent.pos.x - totalWidth / 2f,
-                    transformComponent.pos.y - totalHeight / 2f
+                    transformComponent.pos.x - texture.width.toFloat() / 2f,
+                    transformComponent.pos.y - texture.height.toFloat() / 2f
                 )
                 sprite.setScale(transformComponent.scale.x, transformComponent.scale.y)
                 sprite.draw(_spriteBatch)

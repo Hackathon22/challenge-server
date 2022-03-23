@@ -117,6 +117,7 @@ class ProjectileSystem : System() {
                 instance.getComponentDynamicUnsafe(it.first, ProjectileComponent::class) ?: return
 
             explode(it.first, instance)
+            print("In bullet collision, added to remove: ${it.first}")
             toRemoveEntities.add(it.first)
         }
 
@@ -154,6 +155,8 @@ class ProjectileSystem : System() {
         // sets explosion position
         val explosionTransformComponent = instance.getComponent<TransformComponent>(explosionEntity)
         explosionTransformComponent.pos.set(projectileTransformComponent.pos)
+        explosionTransformComponent.scale.x = 2f
+        explosionTransformComponent.scale.y = 2f
         // sets the explosion position a bit further
         explosionTransformComponent.pos.x += (projectileBodyComponent.width * 1.5f) * cosDeg(
             projectileTransformComponent.rot.z
