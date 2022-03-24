@@ -24,6 +24,7 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-noarg:1.4.10"
     implementation "commons-cli:commons-cli:1.5.0"
     implementation "com.google.code.gson:gson:2.9.0"
+    implementation "com.google.guava:guava:11.0.2"
     api "com.badlogicgames.gdx:gdx-backend-lwjgl:1.10.0"
     api "com.badlogicgames.gdx:gdx-platform:1.10.0:natives-desktop"
 

@@ -1,6 +1,6 @@
 TODO Hackathon:
 
-1) Implement a timer for the agents inside the Java server
+1) ~~Implement a timer for the agents inside the Java server~~
 
 2) ~~Debug the Java server~~ (OK for now)
 
@@ -20,3 +20,5 @@ TODO Hackathon:
 
 10) ~~Finish game gracefully at the end of the commands in replay mode~~
 
+11) When there is an agent's timeout, the python agent needs to be notified and interrupt the my_ai function
+ 

@@ -1,6 +1,7 @@
 from game_simulation import GameSimulation, SnapshotData
 from agent import InvalidCommand, MoveCommand, ShootCommand, Command
 import typing
+import time
 
 def my_ai(gamestate: SnapshotData, my_data: typing.Dict) -> Command:
 	print(gamestate.controlled_player.position)
@@ -19,7 +20,7 @@ if __name__ == '__main__':
 	simulation_list = []
 	used_port = 2049
 
-	simulation = GameSimulation('java', game_time=20.0, ai_time=150.0, commands_per_second=4, port=used_port)
+	simulation = GameSimulation('java', game_time=20.0, ai_time=0.5, commands_per_second=4, port=used_port)
 
 	first_agent_data = {}
 	second_agent_data = {}

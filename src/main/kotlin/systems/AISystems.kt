@@ -1,15 +1,22 @@
 package systems
 
+import com.google.common.util.concurrent.SimpleTimeLimiter
+import com.google.common.util.concurrent.UncheckedTimeoutException
 import com.google.gson.*
 import com.google.gson.annotations.SerializedName
 import components.*
 import core.*
 import java.io.*
 import java.lang.Exception
+import java.lang.RuntimeException
 import java.lang.reflect.Type
 import java.net.ServerSocket
 import java.net.Socket
+import java.time.Duration
+import java.time.Instant
 import java.util.*
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
@@ -83,6 +90,12 @@ class PythonClient(
     private val team: Int,
     private var time: Float
 ) {
+
+    private var _remainingTimeNs = (time * 10e9f).toLong()
+    init {
+        println("Initialized python client with time: $time, - $_remainingTimeNs")
+    }
+
     fun pollActions(instance: Instance): StateCommand {
         // streams to send/receive messages
         val output = PrintWriter(client.getOutputStream(), true)
@@ -98,26 +111,48 @@ class PythonClient(
         output.println(serializedData + "\n")
         output.flush()
 
-        val serializedResult = input.readLine()
+        // waits for the result to come
+        val timeLimiter = SimpleTimeLimiter()
+        val beginTime = Instant.now()
+        try {
+            val serializedResult = timeLimiter.callWithTimeout(
+                input::readLine,
+                _remainingTimeNs,
+                TimeUnit.NANOSECONDS,
+                true
+            )
+            val duration = Duration.between(beginTime, Instant.now()).toNanos()
+            _remainingTimeNs -= duration
+            println("Response time: ${duration}(ns) - Remaining time ${_remainingTimeNs}(ns)")
 
-        // gets the base class from the command
-        val aiCommand = serializedResult.toObject<AICommand>()
+            if (_remainingTimeNs < 0)
+                throw RuntimeException("Agent ran out of time.")
 
-        // parses the result
-        return when (aiCommand.commandType) {
-            "MOVE" -> {
-                val moveCommand = serializedResult.toObject<AIMoveCommand>()
-                val direction = moveCommand.moveDirection
-                MoveCommand(Vec3F(direction[0], direction[1], direction[2]))
+            // gets the base class from the command
+            val aiCommand = serializedResult.toObject<AICommand>()
+
+            // parses the result
+            return when (aiCommand.commandType) {
+                "MOVE" -> {
+                    val moveCommand = serializedResult.toObject<AIMoveCommand>()
+                    val direction = moveCommand.moveDirection
+                    MoveCommand(Vec3F(direction[0], direction[1], direction[2]))
+                }
+                "SHOOT" -> {
+                    val shootCommand = serializedResult.toObject<AIShootCommand>()
+                    val angle = shootCommand.shootDirection
+                    ShootCommand(angle)
+                }
+                else -> {
+                    throw IllegalArgumentException("Invalid command type.")
+                }
             }
-            "SHOOT" -> {
-                val shootCommand = serializedResult.toObject<AIShootCommand>()
-                val angle = shootCommand.shootDirection
-                ShootCommand(angle)
-            }
-            else -> {
-                throw IllegalArgumentException("Invalid command type.")
-            }
+        }
+        catch (exc: TimeoutException) {
+            throw RuntimeException("Agent ran out of time.")
+        }
+        catch (exc: UncheckedTimeoutException) {
+            throw RuntimeException("Agent ran out of time.")
         }
     }
 
@@ -396,9 +431,9 @@ class PythonAISystem : System() {
                 scoreSystem.forceFinishGame(instance, client.entity)
                 abort(
                     "Exception occurred when parsing the action for user $username:\n${exc}",
-                    "player: $username"
+                    username
                 )
-                return@forEach
+                return
             }
         }
         // updates the time counter
@@ -439,7 +474,7 @@ class ReplaySystem : System() {
 
     private var _commands: Queue<StateCommand> = LinkedList()
 
-    var finished : Boolean = false
+    var finished: Boolean = false
         private set
 
     override fun initializeLogic(vararg arg: Any): Boolean {

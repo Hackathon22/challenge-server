@@ -5,6 +5,7 @@ import core.Instance
 import core.Signature
 import core.System
 import systems.*
+import kotlin.system.exitProcess
 
 open class WindowlessClient(
     private val gameFile: String,
@@ -147,9 +148,11 @@ open class WindowlessClient(
         if (!_aiSystem.aborted()) {
             (_aiSystem).finish(gameResult)
             println("Game finished, game results are: $gameResult")
+            exitProcess(0)
         }
         else {
             println("Game aborted, game results are: $gameResult")
+            exitProcess(0)
         }
     }
 

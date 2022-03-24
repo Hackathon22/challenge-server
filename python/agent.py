@@ -7,6 +7,7 @@ import time
 import json
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
+import traceback
 
 JAR_FILE = 'challenge.jar'
 
@@ -186,6 +187,7 @@ class AIAgent:
 		except Exception as exc:
 			# In case there is problem inside the function coded by the participants
 			print(f'Exception during the AI function:\n\t{exc}\nSending an invalid command to abort the game.')
+			traceback.print_exc()
 			command = InvalidCommand(f'Exception during the ai function:\n{exc}')
 
 		# Sends the command to the server
