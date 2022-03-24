@@ -51,6 +51,7 @@ class GameSimulation:
 		second_agent = AIAgent(self._second_agent_username, 1, self._second_agent_ai, self._second_agent_data, port=self._port)
 
 		first_agent.start()
+		time.sleep(1)
 		second_agent.start()
 
 		first_agent.join()

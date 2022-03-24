@@ -121,7 +121,7 @@ class ScoreSystem : System() {
 
     fun results(instance: Instance): List<ScoreResult> {
         // checks which team won first
-        var winningTeam = 0
+        var winningTeam = -1
         var winningScore = 0f
         entities.forEach {
             val scoreComponent = instance.getComponentDynamicUnsafe(it, ScoreComponent::class)

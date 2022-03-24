@@ -224,5 +224,13 @@ open class ReplayClient(private val gameFile: String) :
         _uiSystem.update(_instance, deltaTime)
 
         _tickCounter += 1
+
+        if ((_replaySystem as ReplaySystem).finished) {
+            val scores = (_scoreSystem as ScoreSystem).results(_instance)
+            scores.forEach { score ->
+                println(score)
+            }
+            Gdx.app.exit()
+        }
     }
 }

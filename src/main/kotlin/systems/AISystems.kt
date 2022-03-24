@@ -10,10 +10,8 @@ import java.lang.reflect.Type
 import java.net.ServerSocket
 import java.net.Socket
 import java.util.*
-import javax.swing.plaf.nimbus.State
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
-import kotlin.collections.LinkedHashSet
 
 
 // JSON serialization solution from
@@ -441,6 +439,9 @@ class ReplaySystem : System() {
 
     private var _commands: Queue<StateCommand> = LinkedList()
 
+    var finished : Boolean = false
+        private set
+
     override fun initializeLogic(vararg arg: Any): Boolean {
         assert(arg.isNotEmpty())
         return try {
@@ -458,7 +459,8 @@ class ReplaySystem : System() {
     override fun updateLogic(instance: Instance, delta: Float) {
         _agentOutputSave!!.agents.forEach { agent ->
             val stateCommand = _commands.poll()
-            println("Remaining commands to play: ${_commands.size}")
+            if (_commands.isEmpty())
+                finished = true
             val commandComponent = instance.getComponent<CommandComponent>(agent.entity)
             if (commandComponent.controllerType == ControllerType.AI)
                 commandComponent.commands.add(stateCommand)

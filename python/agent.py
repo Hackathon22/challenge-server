@@ -81,7 +81,7 @@ class ShootCommand(Command):
 
 
 @dataclass
-class InvalidCommmand(Command):
+class InvalidCommand(Command):
 	'''
 	Invalid command as a crash test for the server
 	'''
@@ -143,8 +143,8 @@ class AIAgent:
 	@staticmethod
 	def _parse_player_data(player_data: typing.Dict) -> PlayerData:
 		player_position = (float(player_data['pos']['x']), 
-									  float(player_data['pos']['x']),
-									  float(player_data['pos']['y']))
+									  float(player_data['pos']['y']),
+									  float(player_data['pos']['z']))
 		player_speed = (float(player_data['speed']['x']),
 								   float(player_data['speed']['y']),
 								   float(player_data['speed']['z']))
@@ -185,8 +185,8 @@ class AIAgent:
 			command = self.ai(snapshot, self._data)
 		except Exception as exc:
 			# In case there is problem inside the function coded by the participants
-			print('Exception during the AI function, sending an invalid command to abort the game.')
-			command = InvalidCommmand(f'Exception during the ai function:\n{exc}')
+			print(f'Exception during the AI function:\n\t{exc}\nSending an invalid command to abort the game.')
+			command = InvalidCommand(f'Exception during the ai function:\n{exc}')
 
 		# Sends the command to the server
 		serialized_command = json.dumps(command.__dict__)
@@ -225,41 +225,4 @@ class AIAgent:
 			elif message['header'] == 'ABORT':
 				self.results = self._parse_abortion(message['error'], message['blame'])
 				should_stop = True
-
-def my_ai(gamestate: SnapshotData):
-	print('Sending shoot command')
-	return ShootCommand(270.0)
-
-
-def my_ai_failed(gamestate: SnapshotData):
-	print('Sending invalid command')
-	return InvalidCommmand('Hello, this is a failed command.')
-
-def my_ai_exception(gamestate: SnapshotData):
-	raise Exception('I fucked up in my_ai script')
-
-
-if __name__ == '__main__':
-	print('Starting the challenge server.')
-	challenge_thread = threading.Thread(target=challenge_thread_work)
-	challenge_thread.start()
-
-	print('Waiting a second for the server to launch.')
-	time.sleep(1)
-
-	blue_agent = AIAgent(BLUE_USERNAME, BLUE_TEAM, my_ai)
-	red_agent = AIAgent(RED_USERNAME, RED_TEAM, my_ai_exception)
-
-	print('Starting the agents')
-	blue_agent.start()
-	red_agent.start()
-
-	blue_agent.join()
-	red_agent.join()
-
-	print('Agents joined.')
-
-	print('Joining the challenge thread.')
-	challenge_thread.join()
-	print('Challenge thread joined.')
 
