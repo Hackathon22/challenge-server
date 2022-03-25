@@ -133,15 +133,22 @@ open class WindowlessClient(
         var tickCounter = 0
         val aiModulo = (60 / actionsPerSecond).toInt()
         while (!(_scoreSystem as ScoreSystem).gameOver()) {
-            if (tickCounter % aiModulo == 0)
-                _aiSystem.update(_instance, deltaTime)
-            _timerSystem.update(_instance, deltaTime)
-            _stateSystem.update(_instance, deltaTime)
-            _movementSystem.update(_instance, deltaTime)
-            _collisionSystem.update(_instance, deltaTime)
-            _projectileSystem.update(_instance, deltaTime)
-            _scoreSystem.update(_instance, deltaTime)
-            tickCounter+=1
+            try {
+                if (tickCounter % aiModulo == 0)
+                    _aiSystem.update(_instance, deltaTime)
+                _timerSystem.update(_instance, deltaTime)
+                _stateSystem.update(_instance, deltaTime)
+                _movementSystem.update(_instance, deltaTime)
+                _collisionSystem.update(_instance, deltaTime)
+                _projectileSystem.update(_instance, deltaTime)
+                _scoreSystem.update(_instance, deltaTime)
+                tickCounter += 1
+            } catch (exc: Exception) {
+                println("Internal server exception.")
+                exc.printStackTrace()
+                (_scoreSystem as ScoreSystem).forceFinishGame(_instance, -1)
+                (_aiSystem as PythonAISystem).abort("Internal server exception: $exc", "server")
+            }
         }
         val gameResult = _scoreSystem.results(_instance)
         (_aiSystem as PythonAISystem).saveToFile()
@@ -149,8 +156,7 @@ open class WindowlessClient(
             (_aiSystem).finish(gameResult)
             println("Game finished, game results are: $gameResult")
             exitProcess(0)
-        }
-        else {
+        } else {
             println("Game aborted, game results are: $gameResult")
             exitProcess(0)
         }

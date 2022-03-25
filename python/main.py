@@ -4,7 +4,6 @@ import typing
 import time
 
 def my_ai(gamestate: SnapshotData, my_data: typing.Dict) -> Command:
-	print(gamestate.controlled_player.position)
 	if gamestate.controlled_player.position[0] < 0:
 		return MoveCommand((1.0, 0.0, 0.0))
 	elif gamestate.controlled_player.position[1] > 0:

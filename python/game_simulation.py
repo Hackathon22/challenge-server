@@ -41,14 +41,14 @@ class GameSimulation:
 		self._second_agent_ai = ai
 		self._second_agent_data = data
 
-	def _round_worker(self, pipe_out: multiprocessing.Pipe):
+	def _round_worker(self, queue: multiprocessing.Queue):
 		challenge_thread = threading.Thread(target=challenge_thread_work, args=(self._jvm_path, self.save_file, self.game_time, self.ai_time, self.commands_per_second, self._port))
 		challenge_thread.start()
 
 		time.sleep(1)
 
-		first_agent = AIAgent(self._first_agent_username, 0, self._first_agent_ai, self._first_agent_data, port=self._port)
-		second_agent = AIAgent(self._second_agent_username, 1, self._second_agent_ai, self._second_agent_data, port=self._port)
+		first_agent = AIAgent(self._first_agent_username, 0, self._first_agent_ai, self._first_agent_data, self.ai_time, port=self._port)
+		second_agent = AIAgent(self._second_agent_username, 1, self._second_agent_ai, self._second_agent_data, self.ai_time, port=self._port)
 
 		first_agent.start()
 		time.sleep(1)
@@ -59,7 +59,7 @@ class GameSimulation:
 
 		challenge_thread.join()
 
-		pipe_out.send(([first_agent.results, second_agent.results], [self._first_agent_data, self._second_agent_data]))
+		queue.put(([first_agent.results, second_agent.results], [self._first_agent_data, self._second_agent_data]), block=True)
 
 	def start_round(self) -> typing.List[AgentResult]:
 		if self._process is not None:
@@ -71,9 +71,9 @@ class GameSimulation:
 		assert self._second_agent_username is not None
 		assert self._second_agent_ai is not None
 
-		self._recv_end, send_end = multiprocessing.Pipe(False)
+		self._queue = multiprocessing.Queue()
 
-		self._process = multiprocessing.Process(target=self._round_worker, args=(send_end,))
+		self._process = multiprocessing.Process(target=self._round_worker, args=(self._queue,))
 		self._process.start()
 
 
@@ -81,8 +81,8 @@ class GameSimulation:
 		if self._process is None:
 			raise Exception('No round launched for this game simulation.')
 
+		agents_results, agents_data = self._queue.get()
 		self._process.join()
-		agents_results, agents_data = self._recv_end.recv()
 
 		self._process = None
 

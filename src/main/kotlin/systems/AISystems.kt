@@ -112,47 +112,29 @@ class PythonClient(
         output.flush()
 
         // waits for the result to come
-        val timeLimiter = SimpleTimeLimiter()
         val beginTime = Instant.now()
-        try {
-            val serializedResult = timeLimiter.callWithTimeout(
-                input::readLine,
-                _remainingTimeNs,
-                TimeUnit.NANOSECONDS,
-                true
-            )
-            val duration = Duration.between(beginTime, Instant.now()).toNanos()
-            _remainingTimeNs -= duration
-            println("Response time: ${duration}(ns) - Remaining time ${_remainingTimeNs}(ns)")
+        val serializedResult = input.readLine()
+        val duration = Duration.between(beginTime, Instant.now()).toNanos()
+        _remainingTimeNs -= duration
 
-            if (_remainingTimeNs < 0)
-                throw RuntimeException("Agent ran out of time.")
+        // gets the base class from the command
+        val aiCommand = serializedResult.toObject<AICommand>()
 
-            // gets the base class from the command
-            val aiCommand = serializedResult.toObject<AICommand>()
-
-            // parses the result
-            return when (aiCommand.commandType) {
-                "MOVE" -> {
-                    val moveCommand = serializedResult.toObject<AIMoveCommand>()
-                    val direction = moveCommand.moveDirection
-                    MoveCommand(Vec3F(direction[0], direction[1], direction[2]))
-                }
-                "SHOOT" -> {
-                    val shootCommand = serializedResult.toObject<AIShootCommand>()
-                    val angle = shootCommand.shootDirection
-                    ShootCommand(angle)
-                }
-                else -> {
-                    throw IllegalArgumentException("Invalid command type.")
-                }
+        // parses the result
+        return when (aiCommand.commandType) {
+            "MOVE" -> {
+                val moveCommand = serializedResult.toObject<AIMoveCommand>()
+                val direction = moveCommand.moveDirection
+                MoveCommand(Vec3F(direction[0], direction[1], direction[2]))
             }
-        }
-        catch (exc: TimeoutException) {
-            throw RuntimeException("Agent ran out of time.")
-        }
-        catch (exc: UncheckedTimeoutException) {
-            throw RuntimeException("Agent ran out of time.")
+            "SHOOT" -> {
+                val shootCommand = serializedResult.toObject<AIShootCommand>()
+                val angle = shootCommand.shootDirection
+                ShootCommand(angle)
+            }
+            else -> {
+                throw IllegalArgumentException("Invalid command type.")
+            }
         }
     }
 
@@ -427,6 +409,7 @@ class PythonAISystem : System() {
                 }
             } catch (exc: Exception) {
                 println("Exception occurred when parsing the action for user: $username")
+                exc.printStackTrace()
                 val scoreSystem = instance.getSystem<ScoreSystem>()
                 scoreSystem.forceFinishGame(instance, client.entity)
                 abort(
@@ -446,7 +429,7 @@ class PythonAISystem : System() {
     override fun onEntityRemoved(entity: Entity) {
     }
 
-    private fun abort(message: String, blame: String) {
+    fun abort(message: String, blame: String) {
         _clients.forEach { (_, session) ->
             session.abort(message, blame)
         }

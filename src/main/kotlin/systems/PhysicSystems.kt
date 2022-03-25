@@ -7,6 +7,7 @@ import components.DynamicComponent
 import components.TransformComponent
 import core.*
 import java.util.*
+import kotlin.collections.HashMap
 import kotlin.math.PI
 
 class MovementSystem : System() {
@@ -73,8 +74,10 @@ class CollisionSystem : System() {
                         )
 
                         // rolling back entity position to last non colliding position
-                        _callbackPositions[entityA] = _entityPositions[entityA]!!
-                        _callbackPositions[entityB] = _entityPositions[entityB]!!
+                        if (_entityPositions[entityA] != null)
+                            _callbackPositions[entityA] = _entityPositions[entityA]!!
+                        if (_entityPositions[entityB] != null)
+                            _callbackPositions[entityB] = _entityPositions[entityB]!!
 
 
                         if (!_entityCollided[entityA]!! || !_entityCollided[entityB]!!) {
@@ -216,4 +219,33 @@ class CollisionSystem : System() {
         if (!_removedEntities.contains(entity))
             _removedEntities.add(entity)
     }
+}
+
+class PhysicsSystem : System() {
+
+    private val _entitiesToBodies = HashMap<Entity, Body>()
+    private val _bodiesToEntities = HashMap<Entity, Body>()
+
+    private val _world = World(Vector2(0.0f, 0.0f), false)
+
+    // Yes this is unholy af
+    private var _instance : Instance? = null
+
+    override fun initializeLogic(vararg arg: Any): Boolean {
+        TODO("Not yet implemented")
+    }
+
+    override fun updateLogic(instance: Instance, delta: Float) {
+        TODO("Not yet implemented")
+    }
+
+    override fun onEntityAdded(entity: Entity) {
+        if (_entitiesToBodies[entity] == null) {
+        }
+    }
+
+    override fun onEntityRemoved(entity: Entity) {
+        TODO("Not yet implemented")
+    }
+
 }

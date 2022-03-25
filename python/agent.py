@@ -8,6 +8,8 @@ import json
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
 import traceback
+from contextlib import contextmanager
+from func_timeout import func_timeout, FunctionTimedOut
 
 JAR_FILE = 'challenge.jar'
 
@@ -103,13 +105,13 @@ class AgentResult:
 	error_message: str
 	blame: str
 
-
 class AIAgent:
 
-	def __init__(self, username : str, team: int, ai: typing.Callable[[], str], data: typing.Dict = None, address: str = '127.0.0.1', port: int = 2049):
+	def __init__(self, username : str, team: int, ai: typing.Callable[[], str], data: typing.Dict = None, ai_time: float = 150.0, address: str = '127.0.0.1', port: int = 2049):
 		self.username = username
 		self.team = team
 		self.ai = ai
+		self._remaining_time = ai_time
 		self._port = port
 		self._address = address
 		self._socket = None
@@ -183,7 +185,21 @@ class AIAgent:
 
 		# Asks for the command to the AI
 		try:
-			command = self.ai(snapshot, self._data)
+			begin = datetime.datetime.now()
+			
+			command = func_timeout(self._remaining_time, self.ai, args=(snapshot, self._data))
+			
+			end = datetime.datetime.now()
+			elapsed_seconds = (end - begin).total_seconds()
+			self._remaining_time -= elapsed_seconds
+
+			print(f'Elapsed seconds in my ai function: {elapsed_seconds} - remaining: {self._remaining_time}')
+			if (type(command) not in [ShootCommand, MoveCommand, InvalidCommand]):
+				raise Exception(f'Invalid command type returned by ai: {type(command)}')
+				
+		except FunctionTimedOut as exc:
+			print(f'Agent timed out inside AI function. Sending an invalid command to abort the game.')
+			command = InvalidCommand(f'Agent timed out during AI function.')
 		except Exception as exc:
 			# In case there is problem inside the function coded by the participants
 			print(f'Exception during the AI function:\n\t{exc}\nSending an invalid command to abort the game.')
