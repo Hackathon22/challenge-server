@@ -6,6 +6,7 @@ import components.*
 import core.*
 import render.SpriteRegister
 import systems.*
+import java.awt.color.ICC_ProfileGray
 import java.util.concurrent.atomic.AtomicBoolean
 
 const val BASE_WIDTH = 1200
@@ -21,8 +22,6 @@ open class DesktopClient(private val gameFile: String? = null, private val gameT
 
     private val _instance = Instance()
 
-    private val _movementSystem: System = _instance.registerSystem<MovementSystem>()
-
     private val _cameraSystem: System = _instance.registerSystem<CameraSystem>()
 
     private val _spriteSystem: System = _instance.registerSystem<SpriteRenderSystem>()
@@ -35,8 +34,6 @@ open class DesktopClient(private val gameFile: String? = null, private val gameT
 
     private val _projectileSystem: System = _instance.registerSystem<ProjectileSystem>()
 
-    private val _collisionSystem: System = _instance.registerSystem<CollisionSystem>()
-
     private val _scoreSystem: System = _instance.registerSystem<ScoreSystem>()
 
     private val _uiSystem: System = _instance.registerSystem<UISystem>()
@@ -44,6 +41,8 @@ open class DesktopClient(private val gameFile: String? = null, private val gameT
     private val _timerSystem: System = _instance.registerSystem<TimerSystem>()
 
     private val _spawnerSystem: System = _instance.registerSystem<SpawnerSystem>()
+
+    private val _physicsSystem : System = _instance.registerSystem<PhysicsSystem>()
 
     override val observers = ArrayList<IObserver>()
 
@@ -66,17 +65,6 @@ open class DesktopClient(private val gameFile: String? = null, private val gameT
         _instance.registerComponent<SpawnerComponent>()
 
         // initializes non-graphical systems
-        _movementSystem.initialize()
-        val movementSignature = Signature()
-        movementSignature.set(_instance.getComponentType<TransformComponent>(), true)
-        movementSignature.set(_instance.getComponentType<DynamicComponent>(), true)
-        _instance.setSystemSignature<MovementSystem>(movementSignature)
-
-        _collisionSystem.initialize(_instance)
-        val collisionSignature = Signature()
-        collisionSignature.set(_instance.getComponentType<TransformComponent>(), true)
-        collisionSignature.set(_instance.getComponentType<BodyComponent>(), true)
-        _instance.setSystemSignature<CollisionSystem>(collisionSignature)
 
         _stateSystem.initialize()
         val stateSignature = Signature()
@@ -113,9 +101,17 @@ open class DesktopClient(private val gameFile: String? = null, private val gameT
         spawnerSignature.set(_instance.getComponentType<SpawnerComponent>(), true)
         _instance.setSystemSignature<SpawnerSystem>(spawnerSignature)
 
+        _physicsSystem.initialize(_instance)
+        val physicsSignature = Signature()
+        physicsSignature.set(_instance.getComponentType<TransformComponent>(), true)
+        physicsSignature.set(_instance.getComponentType<BodyComponent>(), true)
+        _instance.setSystemSignature<PhysicsSystem>(physicsSignature)
+
         // sets observers on non-graphical systems
-        _collisionSystem.addObserver(_projectileSystem)  // bullet collision
-        _collisionSystem.addObserver(_stateSystem)  // state change
+//        _collisionSystem.addObserver(_projectileSystem)  // bullet collision
+//        _collisionSystem.addObserver(_stateSystem)  // state change
+        _physicsSystem.addObserver(_projectileSystem)
+        _physicsSystem.addObserver(_stateSystem)
         _projectileSystem.addObserver(_stateSystem)
     }
 
@@ -200,8 +196,10 @@ open class DesktopClient(private val gameFile: String? = null, private val gameT
         _stateSystem.update(_instance, deltaTime)
 
         // physic systems
-        _movementSystem.update(_instance, deltaTime)
-        _collisionSystem.update(_instance, deltaTime)
+
+        // _movementSystem.update(_instance, deltaTime)
+        // _collisionSystem.update(_instance, deltaTime)
+        _physicsSystem.update(_instance, deltaTime)
 
         _projectileSystem.update(_instance, deltaTime)
 

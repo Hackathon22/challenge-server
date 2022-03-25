@@ -15,7 +15,7 @@ open class ReplayClient(private val gameFile: String) :
 
     private val _instance = Instance()
 
-    private val _movementSystem: System = _instance.registerSystem<MovementSystem>()
+    private val _physicsSystem: System = _instance.registerSystem<PhysicsSystem>()
 
     private val _cameraSystem: System = _instance.registerSystem<CameraSystem>()
 
@@ -26,8 +26,6 @@ open class ReplayClient(private val gameFile: String) :
     private val _weaponSystem: System = _instance.registerSystem<WeaponSystem>()
 
     private val _projectileSystem: System = _instance.registerSystem<ProjectileSystem>()
-
-    private val _collisionSystem: System = _instance.registerSystem<CollisionSystem>()
 
     private val _scoreSystem: System = _instance.registerSystem<ScoreSystem>()
 
@@ -85,17 +83,11 @@ open class ReplayClient(private val gameFile: String) :
             _agentData.add(it)
         }
 
-        _movementSystem.initialize()
-        val movementSignature = Signature()
-        movementSignature.set(_instance.getComponentType<TransformComponent>(), true)
-        movementSignature.set(_instance.getComponentType<DynamicComponent>(), true)
-        _instance.setSystemSignature<MovementSystem>(movementSignature)
-
-        _collisionSystem.initialize(_instance)
-        val collisionSignature = Signature()
-        collisionSignature.set(_instance.getComponentType<TransformComponent>(), true)
-        collisionSignature.set(_instance.getComponentType<BodyComponent>(), true)
-        _instance.setSystemSignature<CollisionSystem>(collisionSignature)
+        _physicsSystem.initialize(_instance)
+        val physicsSignature = Signature()
+        physicsSignature.set(_instance.getComponentType<TransformComponent>(), true)
+        physicsSignature.set(_instance.getComponentType<BodyComponent>(), true)
+        _instance.setSystemSignature<PhysicsSystem>(physicsSignature)
 
         _stateSystem.initialize()
         val stateSignature = Signature()
@@ -133,8 +125,8 @@ open class ReplayClient(private val gameFile: String) :
         _instance.setSystemSignature<SpawnerSystem>(spawnerSignature)
 
         // sets observers on non-graphical systems
-        _collisionSystem.addObserver(_projectileSystem)  // bullet collision
-        _collisionSystem.addObserver(_stateSystem)  // state change
+        _physicsSystem.addObserver(_projectileSystem)  // bullet collision
+        _physicsSystem.addObserver(_stateSystem)  // state change
         _projectileSystem.addObserver(_stateSystem)
     }
 
@@ -210,8 +202,7 @@ open class ReplayClient(private val gameFile: String) :
         _stateSystem.update(_instance, deltaTime)
 
         // physic systems
-        _movementSystem.update(_instance, deltaTime)
-        _collisionSystem.update(_instance, deltaTime)
+        _physicsSystem.update(_instance, deltaTime)
 
         _projectileSystem.update(_instance, deltaTime)
 

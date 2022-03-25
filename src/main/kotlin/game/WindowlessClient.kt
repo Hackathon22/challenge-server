@@ -4,6 +4,7 @@ import components.*
 import core.Instance
 import core.Signature
 import core.System
+import org.lwjgl.Sys
 import systems.*
 import kotlin.system.exitProcess
 
@@ -17,15 +18,13 @@ open class WindowlessClient(
 
     private val _instance = Instance()
 
-    private val _movementSystem: System = _instance.registerSystem<MovementSystem>()
+    private val _physicsSystem : System = _instance.registerSystem<PhysicsSystem>()
 
     private val _stateSystem: System = _instance.registerSystem<StateSystem>()
 
     private val _weaponSystem: System = _instance.registerSystem<WeaponSystem>()
 
     private val _projectileSystem: System = _instance.registerSystem<ProjectileSystem>()
-
-    private val _collisionSystem: System = _instance.registerSystem<CollisionSystem>()
 
     private val _scoreSystem: System = _instance.registerSystem<ScoreSystem>()
 
@@ -53,18 +52,11 @@ open class WindowlessClient(
         _instance.registerComponent<TimerComponent>()
         _instance.registerComponent<SpawnerComponent>()
 
-        // initializes non-graphical systems
-        _movementSystem.initialize()
-        val movementSignature = Signature()
-        movementSignature.set(_instance.getComponentType<TransformComponent>(), true)
-        movementSignature.set(_instance.getComponentType<DynamicComponent>(), true)
-        _instance.setSystemSignature<MovementSystem>(movementSignature)
-
-        _collisionSystem.initialize(_instance)
-        val collisionSignature = Signature()
-        collisionSignature.set(_instance.getComponentType<TransformComponent>(), true)
-        collisionSignature.set(_instance.getComponentType<BodyComponent>(), true)
-        _instance.setSystemSignature<CollisionSystem>(collisionSignature)
+        _physicsSystem.initialize(_instance)
+        val physicsSignature = Signature()
+        physicsSignature.set(_instance.getComponentType<TransformComponent>(), true)
+        physicsSignature.set(_instance.getComponentType<BodyComponent>(), true)
+        _instance.setSystemSignature<PhysicsSystem>(physicsSignature)
 
         _stateSystem.initialize()
         val stateSignature = Signature()
@@ -108,8 +100,8 @@ open class WindowlessClient(
         _instance.setSystemSignature<PythonAISystem>(aiSignature)
 
         // sets observers on non-graphical systems
-        _collisionSystem.addObserver(_projectileSystem)  // bullet collision
-        _collisionSystem.addObserver(_stateSystem)  // state change
+        _physicsSystem.addObserver(_projectileSystem)  // bullet collision
+        _physicsSystem.addObserver(_stateSystem)  // state change
         _projectileSystem.addObserver(_stateSystem)
 
         println("Components and Systems are initialized.")
@@ -138,8 +130,7 @@ open class WindowlessClient(
                     _aiSystem.update(_instance, deltaTime)
                 _timerSystem.update(_instance, deltaTime)
                 _stateSystem.update(_instance, deltaTime)
-                _movementSystem.update(_instance, deltaTime)
-                _collisionSystem.update(_instance, deltaTime)
+                _physicsSystem.update(_instance, deltaTime)
                 _projectileSystem.update(_instance, deltaTime)
                 _scoreSystem.update(_instance, deltaTime)
                 tickCounter += 1

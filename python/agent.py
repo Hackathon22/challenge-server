@@ -193,7 +193,6 @@ class AIAgent:
 			elapsed_seconds = (end - begin).total_seconds()
 			self._remaining_time -= elapsed_seconds
 
-			print(f'Elapsed seconds in my ai function: {elapsed_seconds} - remaining: {self._remaining_time}')
 			if (type(command) not in [ShootCommand, MoveCommand, InvalidCommand]):
 				raise Exception(f'Invalid command type returned by ai: {type(command)}')
 				

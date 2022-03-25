@@ -9,7 +9,8 @@ def my_ai(gamestate: SnapshotData, my_data: typing.Dict) -> Command:
 	elif gamestate.controlled_player.position[1] > 0:
 		return MoveCommand((0.0, -1.0, 0.0))
 	else:
-		return MoveCommand((0.0, 0.0, 0.0))
+		return ShootCommand(45.0)
+#		return MoveCommand((0.0, 0.0, 0.0))
 
 def idle_ai(gamestate: SnapshotData, my_data: typing.Dict) -> Command:
 	return MoveCommand((0.0, 0.0, 0.0))
@@ -19,7 +20,7 @@ if __name__ == '__main__':
 	simulation_list = []
 	used_port = 2049
 
-	simulation = GameSimulation('java', game_time=20.0, ai_time=0.5, commands_per_second=4, port=used_port)
+	simulation = GameSimulation('java', game_time=20.0, ai_time=150.0, commands_per_second=6, port=used_port)
 
 	first_agent_data = {}
 	second_agent_data = {}

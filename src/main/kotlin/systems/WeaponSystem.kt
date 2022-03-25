@@ -45,9 +45,9 @@ class WeaponSystem : System() {
         val transformComponent = TransformComponent()
 
         transformComponent.pos.x =
-            entityTransformComponent.pos.x + 32 * cosDeg(shooterAngle)
+            entityTransformComponent.pos.x + 40 * cosDeg(shooterAngle)
         transformComponent.pos.y =
-            entityTransformComponent.pos.y + 32 * sinDeg(shooterAngle)
+            entityTransformComponent.pos.y + 40 * sinDeg(shooterAngle)
 
         transformComponent.rot.z = shooterAngle
 
