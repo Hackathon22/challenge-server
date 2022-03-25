@@ -22,6 +22,6 @@ TODO Hackathon:
 
 11) ~~When there is an agent's timeout, the python agent needs to be notified and interrupt the my_ai function~~
 
-12) If time allows it, remake the physical system
+12) ~~If time allows it, remake the physical system~~
 
 13) ~~Debug pipe problem where the pipe hangs when there is too much data~~
