@@ -248,17 +248,22 @@ class AgentOutputSaveDeserializer : JsonDeserializer<AgentsOutputSave> {
             val jsonCommand = element.asJsonObject
             val jsonStateCommand = jsonCommand.get("command").asJsonObject
             when (jsonStateCommand.get("commandType").asString) {
-                "moveCommand" -> outputSave.addCommand(
-                    jsonStateCommand.asJsonObject.toString().toObject<MoveCommand>(),
-                    jsonCommand.get("time").asFloat,
-                    jsonCommand.get("entity").asInt
-                )
-                "shootCommand" -> outputSave.addCommand(
-                    jsonStateCommand.asJsonObject.toString().toObject<ShootCommand>(),
-                    jsonCommand.get("time").asFloat,
-                    jsonCommand.get("entity").asInt
-                )
-                else -> throw JsonParseException("Unknown state command type: ${jsonCommand.get("commandType").asString}")
+                "moveCommand" -> {
+                    outputSave.addCommand(
+                        jsonStateCommand.asJsonObject.toString().toObject<MoveCommand>(),
+                        jsonCommand.get("time").asFloat,
+                        jsonCommand.get("entity").asInt)
+                }
+                "shootCommand" -> {
+                    outputSave.addCommand(
+                        jsonStateCommand.asJsonObject.toString().toObject<ShootCommand>(),
+                        jsonCommand.get("time").asFloat,
+                        jsonCommand.get("entity").asInt
+                    )
+                }
+                else -> {
+                    throw JsonParseException("Unknown state command type: ${jsonCommand.get("commandType").asString}")
+                }
             }
         }
 
@@ -465,6 +470,7 @@ class ReplaySystem : System() {
         return try {
             val filePath = arg[0] as String
             _agentOutputSave = AgentsOutputSave.loadFromFile(filePath)
+            println("Loaded ${_agentOutputSave!!.commands.size} commands")
             _agentOutputSave!!.commands.forEach {
                 _commands.add(it.command)
             }

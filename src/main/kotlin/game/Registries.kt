@@ -55,7 +55,7 @@ object EntityRegistry {
         simpleSpriteComponent.sprite = "soldier"
         val simpleStateComponent = StateComponent()
         val simpleDynamicComponent = DynamicComponent()
-        val simpleCharacterComponent = CharacterComponent(health = 100.0f, maxSpeed = 200.0f)
+        val simpleCharacterComponent = CharacterComponent(health = 100.0f, maxSpeed = 150.0f)
         val simpleBodyComponent = BodyComponent(32.0f, 32.0f)
         val simpleScoreComponent = ScoreComponent()
         val componentList = arrayListOf(

@@ -49,9 +49,13 @@ open class ReplayClient(private val gameFile: String) :
 
     private var _aiModulo = (60 / _commandsPerSeconds).toInt()
 
+    private var _deltaTime = (1.0f / 60.0f)
+
     override val observers = ArrayList<IObserver>()
 
     init {
+
+        WINDOW_MODE = false
         // registers components
         _instance.registerComponent<NetworkComponent>()
         _instance.registerComponent<TransformComponent>()
@@ -78,6 +82,9 @@ open class ReplayClient(private val gameFile: String) :
         _gameTime = (_replaySystem as ReplaySystem).gameTime()
         _aiTime = _replaySystem.aiTime()
         _commandsPerSeconds = _replaySystem.commandsPerSeconds()
+        _aiModulo = (60 / _commandsPerSeconds).toInt()
+
+        println("Replay starting with game time: $_gameTime, AI time: $_aiTime, commands per seconds: $_commandsPerSeconds")
 
         _replaySystem.agents().forEach {
             _agentData.add(it)
@@ -189,30 +196,28 @@ open class ReplayClient(private val gameFile: String) :
     }
 
     override fun render() {
-        val deltaTime = Gdx.graphics.deltaTime
-
         // get inputs
         if (_tickCounter % _aiModulo == 0)
-            _replaySystem.update(_instance, deltaTime)
+            _replaySystem.update(_instance, _deltaTime)
 
         // simulate timer
-        _timerSystem.update(_instance, deltaTime)
+        _timerSystem.update(_instance, _deltaTime)
 
         // simulate player state
-        _stateSystem.update(_instance, deltaTime)
+        _stateSystem.update(_instance, _deltaTime)
 
         // physic systems
-        _physicsSystem.update(_instance, deltaTime)
+        _physicsSystem.update(_instance, _deltaTime)
 
-        _projectileSystem.update(_instance, deltaTime)
+        _projectileSystem.update(_instance, _deltaTime)
 
         // rule systems
-        _scoreSystem.update(_instance, deltaTime)
+        _scoreSystem.update(_instance, _deltaTime)
 
         // render systems
-        _cameraSystem.update(_instance, deltaTime)
-        _spriteSystem.update(_instance, deltaTime)
-        _uiSystem.update(_instance, deltaTime)
+        _cameraSystem.update(_instance, _deltaTime)
+        _spriteSystem.update(_instance, _deltaTime)
+        _uiSystem.update(_instance, _deltaTime)
 
         _tickCounter += 1
 

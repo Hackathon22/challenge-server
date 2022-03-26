@@ -5,7 +5,10 @@ import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration;
 import game.DesktopClient;
 import game.ReplayClient;
 import game.WindowlessClient;
+import game.WindowlessReplayClient;
 import org.apache.commons.cli.*;
+
+import java.awt.*;
 
 public class ClientDesktopLauncher {
     public static void main(String[] arg) throws ParseException, IllegalArgumentException {
@@ -76,6 +79,10 @@ public class ClientDesktopLauncher {
             if (file == null) {
                 throw new IllegalArgumentException("Please specify the save file path when running on replay mode.");
             }
+//            WindowlessReplayClient client = new WindowlessReplayClient(file);
+//            client.create();
+//            client.play();
+
             LwjglApplicationConfiguration applicationConfiguration = new LwjglApplicationConfiguration();
             applicationConfiguration.title = "Hackathon22 - Replay";
             applicationConfiguration.width = 1200;

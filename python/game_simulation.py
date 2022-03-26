@@ -29,7 +29,7 @@ class GameSimulation:
 
 		if save_file is None:
 			date_time = datetime.datetime.now()
-			self.save_file = date_time.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3] + '.hackathon'
+			self.save_file = date_time.strftime('%Y-%m-%d-%H-%M-%S.%f')[:-3] + '.hackathon'
 
 	def set_first_agent(self, username: str, ai: typing.Callable[[SnapshotData, typing.Dict], Command], data: typing.Dict):
 		self._first_agent_username = username

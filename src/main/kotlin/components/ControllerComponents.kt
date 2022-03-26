@@ -33,14 +33,22 @@ abstract class StateCommand(@SerializedName("commandType") val commandType: Stri
  * Called when asking to move left or right
  */
 class MoveCommand(@SerializedName("direction") val direction : Vec3F,
-                  @SerializedName("release") val release: Boolean = false) : StateCommand("moveCommand")
+                  @SerializedName("release") val release: Boolean = false) : StateCommand("moveCommand") {
+    override fun toString(): String {
+        return "MoveCommand(x=${direction.x}, y=${direction.y}, z=${direction.z}"
+    }
+}
 
 class CursorMovedCommand(val worldPosition: Vec3F) : Command()
 
 /**
  * Called when asking to shoot
  */
-class ShootCommand(@SerializedName("angle") val angle: Float? = null) : StateCommand("shootCommand")
+class ShootCommand(@SerializedName("angle") val angle: Float? = null) : StateCommand("shootCommand") {
+    override fun toString(): String {
+        return "ShootCommand(angle=$angle)"
+    }
+}
 
 
 data class CommandComponent(var controllerType: ControllerType = ControllerType.LOCAL_INPUT,
