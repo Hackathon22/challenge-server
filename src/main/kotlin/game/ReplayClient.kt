@@ -54,8 +54,6 @@ open class ReplayClient(private val gameFile: String) :
     override val observers = ArrayList<IObserver>()
 
     init {
-
-        WINDOW_MODE = false
         // registers components
         _instance.registerComponent<NetworkComponent>()
         _instance.registerComponent<TransformComponent>()

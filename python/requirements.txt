@@ -1,0 +1,6 @@
+numpy
+scikit-learn
+scipy
+shapely
+func-timeout
+install-jdk

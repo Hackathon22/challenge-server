@@ -1,0 +1,6 @@
+{
+	"pools": [{"pool_number": 1, "teams": [{"team_name": "brogrammers"}, {"team_name": "peanuts_everywhere"}, {"team_name": "deep_blue"}, {"team_name": "bloody_hat"}]},
+			  {"pool_number": 2, "teams": [{"team_name": "humalu"}, {"team_name": "les_trois_hackataires"}, {"team_name": "p4f"}]},
+			  {"pool_number": 3, "teams": [{"team_name": "polytechniciens_de_surface"}, {"team_name": "send_goodies"}, {"team_name": "skynet"}]},
+			  {"pool_number": 4, "teams": [{"team_name": "team_lbb"}, {"team_name": "the_hedgehogs"}, {"team_name": "g_unit"}]}]
+}

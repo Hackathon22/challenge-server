@@ -155,13 +155,17 @@ class UISystem : System() {
             val x = if (counter == 0) 10f else Gdx.graphics.width - 270f
 
             // printing score and health
-            builder.append("Player: ${scoreComponent.username} - Score: %.2f".format(scoreComponent.score))
+            builder.append("Player: ${scoreComponent.username}")
             _font?.draw(_spriteBatch!!, builder.toString(), x, Gdx.graphics.height - 20f)
+            builder.clear()
+
+            builder.append("Score: %.2f".format(scoreComponent.score))
+            _font?.draw(_spriteBatch!!, builder.toString(), x, Gdx.graphics.height - 50f)
             builder.clear()
             if (characterComponent != null) {
                 _font?.color = Color.GREEN
                 builder.append("Health: ${(characterComponent as CharacterComponent).health}")
-                _font?.draw(_spriteBatch!!, builder.toString(), x, Gdx.graphics.height - 50f)
+                _font?.draw(_spriteBatch!!, builder.toString(), x, Gdx.graphics.height - 80f)
                 _font?.color = Color.WHITE
             }
 
